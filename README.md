@@ -1,6 +1,6 @@
 # ClaudeVS
 
-Get it for free on the Visual Studio Marketplace: [https://marketplace.visualstudio.com/items?itemName=GlassBeaver.ClaudeVS]
+Free on the Visual Studio Marketplace: [https://marketplace.visualstudio.com/items?itemName=GlassBeaver.ClaudeVS]
 
 Simple integration of Claude Code CLI, Copilot CLI, Codex CLI and Gemini CLI into Visual Studio 2026 and 2022. Works by launching an integrated console window with the desired agent (or any custom program) in it, so the agents/programs retain all of their native look & fell and functionality while VS is able to communicate with it.
 
