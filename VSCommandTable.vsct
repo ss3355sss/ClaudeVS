@@ -22,13 +22,13 @@
       <Button guid="guidClaudeVSPackageCmdSet" id="SendFileLocationCommandId" priority="0x0102" type="Button">
         <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
         <Strings>
-          <ButtonText>Send File Location to Claude</ButtonText>
+          <ButtonText>Send Location to Agent</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidClaudeVSPackageCmdSet" id="SendCommentLineCommandId" priority="0x0103" type="Button">
         <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
         <Strings>
-          <ButtonText>Send Comment Line to Claude</ButtonText>
+          <ButtonText>Send Task to Agent</ButtonText>
         </Strings>
       </Button>
     </Buttons>
