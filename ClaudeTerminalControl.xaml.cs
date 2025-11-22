@@ -41,6 +41,9 @@ namespace ClaudeVS
             {
                 System.Diagnostics.Debug.WriteLine("ClaudeTerminalControl_Loaded starting");
 
+                currentCommand = SettingsManager.GetLastCommand();
+                System.Diagnostics.Debug.WriteLine($"Loaded last command: {currentCommand}");
+
                 if (!isInitialized)
                 {
                     dte = GetDTE();
@@ -405,6 +408,7 @@ namespace ClaudeVS
                     if (!string.IsNullOrWhiteSpace(newCommand) && !string.Equals(newCommand, currentCommand, StringComparison.OrdinalIgnoreCase))
                     {
                         currentCommand = newCommand;
+                        SettingsManager.SaveLastCommand(currentCommand);
                         needsResizeAfterOutput = true;
                         string projectDir = GetActiveProjectDirectory();
                         if (!string.IsNullOrEmpty(projectDir))

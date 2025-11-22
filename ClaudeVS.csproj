@@ -59,6 +59,7 @@
     </Compile>
     <Compile Include="ConPtyTerminal.cs" />
     <Compile Include="ConPtyTerminalConnection.cs" />
+    <Compile Include="SettingsManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
