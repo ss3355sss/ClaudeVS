@@ -31,6 +31,7 @@ namespace ClaudeVS
         /// </summary>
         public ClaudeTerminal() : base(null)
         {
+            System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminal CONSTRUCTOR called\n");
             this.Caption = "ClaudeVS";
 
             // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
@@ -39,12 +40,14 @@ namespace ClaudeVS
 
             if (conPtyTerminal != null)
             {
+                System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminal constructor: Window being recreated, disposing old terminal\n");
                 System.Diagnostics.Debug.WriteLine("ClaudeTerminal constructor: Window being recreated, disposing old terminal");
                 conPtyTerminal?.Dispose();
                 conPtyTerminal = null;
                 terminalConnection = null;
             }
 
+            System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminal creating new ClaudeTerminalControl\n");
             this.Content = new ClaudeTerminalControl(this);
         }
 

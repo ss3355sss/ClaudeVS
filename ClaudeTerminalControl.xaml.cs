@@ -21,17 +21,20 @@ namespace ClaudeVS
         private bool isInitialized;
         private string currentCommand = "claude";
         private bool needsResizeAfterOutput = false;
+        private string currentSolutionPath = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClaudeTerminalControl"/> class.
         /// </summary>
         public ClaudeTerminalControl(ToolWindowPane toolWindowPane = null)
         {
+            System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminalControl CONSTRUCTOR called (new instance created) - START\n");
             this.claudeTerminal = toolWindowPane as ClaudeTerminal;
             this.InitializeComponent();
             this.Loaded += ClaudeTerminalControl_Loaded;
             this.Unloaded += ClaudeTerminalControl_Unloaded;
             this.SizeChanged += ClaudeTerminalControl_SizeChanged;
+            System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminalControl CONSTRUCTOR - END\n");
             System.Diagnostics.Debug.WriteLine("ClaudeTerminalControl constructed");
         }
 
@@ -39,10 +42,28 @@ namespace ClaudeVS
         {
             try
             {
+                System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminalControl_Loaded starting (isInitialized={isInitialized}, Terminal exists={claudeTerminal?.Terminal != null})\n");
                 System.Diagnostics.Debug.WriteLine("ClaudeTerminalControl_Loaded starting");
 
                 currentCommand = SettingsManager.GetLastCommand();
                 System.Diagnostics.Debug.WriteLine($"Loaded last command: {currentCommand}");
+
+                // If terminal already exists and is running, don't reinitialize
+                if (claudeTerminal?.Terminal != null)
+                {
+                    System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminalControl_Loaded: Terminal already exists, refreshing screen\n");
+                    System.Diagnostics.Debug.WriteLine("Terminal already exists, refreshing screen");
+
+                    // Refresh the terminal screen
+                    if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+                    {
+                        var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+                        TerminalControl.TriggerResize(size);
+                    }
+
+                    TerminalControl.Focus();
+                    return;
+                }
 
                 if (!isInitialized)
                 {
@@ -61,28 +82,24 @@ namespace ClaudeVS
                     string projectDir = GetActiveProjectDirectory();
                     if (!string.IsNullOrEmpty(projectDir))
                     {
+                        System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} Project found, initializing terminal with: {projectDir}\n");
                         System.Diagnostics.Debug.WriteLine($"Project found, initializing terminal with: {projectDir}");
+                        currentSolutionPath = projectDir;
                         InitializeConPtyTerminal();
                     }
                     else
                     {
+                        System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} No project found, waiting for project to be opened\n");
                         System.Diagnostics.Debug.WriteLine("No project found, waiting for project to be opened");
                     }
 
+                    System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} Setting isInitialized = true\n");
                     isInitialized = true;
-                }
-                else if (claudeTerminal?.Terminal == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("Terminal was disposed (window closed), reinitializing");
-                    string projectDir = GetActiveProjectDirectory();
-                    if (!string.IsNullOrEmpty(projectDir))
-                    {
-                        InitializeConPtyTerminal();
-                    }
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Terminal already initialized and connected, nothing to do");
+                    System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminalControl_Loaded: Terminal already initialized, nothing to do\n");
+                    System.Diagnostics.Debug.WriteLine("Terminal already initialized, nothing to do");
                 }
 
                 System.Diagnostics.Debug.WriteLine("Setting focus to TerminalControl");
@@ -100,6 +117,7 @@ namespace ClaudeVS
         {
             try
             {
+                System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} InitializeConPtyTerminal starting\n");
                 System.Diagnostics.Debug.WriteLine("InitializeConPtyTerminal starting");
 
                 System.Diagnostics.Debug.WriteLine("Creating new ConPtyTerminal instance");
@@ -221,6 +239,7 @@ namespace ClaudeVS
         {
             try
             {
+                System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} ClaudeTerminalControl_Unloaded: Not disconnecting - preserving terminal state (isInitialized={isInitialized})\n");
                 System.Diagnostics.Debug.WriteLine("ClaudeTerminalControl_Unloaded: Not disconnecting - preserving terminal state");
             }
             catch (Exception ex)
@@ -233,11 +252,21 @@ namespace ClaudeVS
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("SolutionEvents_Opened: Solution opened");
+                System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} SolutionEvents_Opened: Solution opened event fired\n");
+                System.Diagnostics.Debug.WriteLine("SolutionEvents_Opened: Solution opened event fired");
                 string projectDir = GetActiveProjectDirectory();
                 if (!string.IsNullOrEmpty(projectDir))
                 {
-                    System.Diagnostics.Debug.WriteLine($"SolutionEvents_Opened: Restarting Claude with new project directory: {projectDir}");
+                    if (projectDir == currentSolutionPath)
+                    {
+                        System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} SolutionEvents_Opened: Same solution, ignoring (already running for: {projectDir})\n");
+                        System.Diagnostics.Debug.WriteLine($"SolutionEvents_Opened: Same solution, ignoring (already running for: {projectDir})");
+                        return;
+                    }
+
+                    System.IO.File.AppendAllText(@"C:\temp\claudevs-debug.log", $"{DateTime.Now:HH:mm:ss.fff} SolutionEvents_Opened: New solution detected, restarting Claude with: {projectDir}\n");
+                    System.Diagnostics.Debug.WriteLine($"SolutionEvents_Opened: New solution detected, restarting Claude with: {projectDir}");
+                    currentSolutionPath = projectDir;
                     RestartClaudeWithWorkingDirectory(projectDir);
                 }
             }
@@ -252,6 +281,7 @@ namespace ClaudeVS
             try
             {
                 System.Diagnostics.Debug.WriteLine("SolutionEvents_AfterClosing: Solution closed, stopping Claude");
+                currentSolutionPath = null;
                 StopClaude();
             }
             catch (Exception ex)
@@ -413,10 +443,12 @@ namespace ClaudeVS
                         string projectDir = GetActiveProjectDirectory();
                         if (!string.IsNullOrEmpty(projectDir))
                         {
+                            currentSolutionPath = projectDir;
                             RestartClaudeWithWorkingDirectory(projectDir);
                         }
                         else
                         {
+                            currentSolutionPath = null;
                             StopClaude();
                             InitializeConPtyTerminal();
                         }
