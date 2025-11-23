@@ -2,6 +2,7 @@ namespace ClaudeVS
 {
     using System;
     using System.ComponentModel.Design;
+    using System.Diagnostics;
     using System.IO;
     using EnvDTE;
     using EnvDTE80;
@@ -19,8 +20,17 @@ namespace ClaudeVS
 
         private SendFileLocationCommand(AsyncPackage package, OleMenuCommandService commandService)
         {
-            this.package = package ?? throw new ArgumentNullException(nameof(package));
-            commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
+            if (package == null)
+            {
+                Debug.WriteLine("ArgumentNullException in SendFileLocationCommand constructor: package is null");
+                throw new ArgumentNullException(nameof(package));
+            }
+            if (commandService == null)
+            {
+                Debug.WriteLine("ArgumentNullException in SendFileLocationCommand constructor: commandService is null");
+                throw new ArgumentNullException(nameof(commandService));
+            }
+            this.package = package;
 
             var menuCommandID = new CommandID(CommandSet, CommandId);
             var menuItem = new MenuCommand(this.Execute, menuCommandID);
@@ -101,7 +111,7 @@ namespace ClaudeVS
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SendFileLocationCommand.Execute failed: {ex.Message}");
+                Debug.WriteLine($"Exception in SendFileLocationCommand Execute: {ex}");
             }
         }
     }

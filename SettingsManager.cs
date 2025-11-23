@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using System;
+using System.Diagnostics;
 
 namespace ClaudeVS
 {
@@ -34,7 +35,7 @@ namespace ClaudeVS
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading last command: {ex.Message}");
+                Debug.WriteLine($"Exception in GetLastCommand: {ex}");
                 return DefaultCommand;
             }
         }
@@ -53,11 +54,10 @@ namespace ClaudeVS
                 }
 
                 userSettingsStore.SetString(CollectionPath, LastCommandKey, command);
-                System.Diagnostics.Debug.WriteLine($"Saved last command: {command}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error saving last command: {ex.Message}");
+                Debug.WriteLine($"Exception in SaveLastCommand: {ex}");
             }
         }
     }

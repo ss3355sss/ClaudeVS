@@ -230,42 +230,33 @@ namespace ClaudeVS
 
                 if (!CreateConsolePipes())
                 {
-                    System.Diagnostics.Debug.WriteLine("Failed to create console pipes");
                     return false;
                 }
 
                 if (!CreatePseudoConsoleSession())
                 {
-                    System.Diagnostics.Debug.WriteLine("Failed to create pseudo-console session");
                     return false;
                 }
 
                 if (!StartShellProcess(workingDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)))
                 {
-                    System.Diagnostics.Debug.WriteLine("Failed to start shell process");
                     return false;
                 }
 
                 IsRunning = true;
 
-                System.Diagnostics.Debug.WriteLine($"Creating outputStream from outputReadPipe handle: {outputReadPipe?.DangerousGetHandle()}");
                 outputStream = new FileStream(outputReadPipe, FileAccess.Read, 4096, false);
-                System.Diagnostics.Debug.WriteLine("outputStream created successfully");
 
-                System.Diagnostics.Debug.WriteLine($"About to start ReadOutputSync task. outputStream null? {outputStream == null}");
                 outputReadingTask = Task.Run(() => ReadOutputSync(cancellationTokenSource.Token));
-                System.Diagnostics.Debug.WriteLine($"ReadOutputSync task started. Task status: {outputReadingTask?.Status}");
 
-                System.Diagnostics.Debug.WriteLine($"Calling ResizePseudoConsole to wake up ConPTY output");
                 COORD consoleSize = new COORD { X = (short)Columns, Y = (short)Rows };
                 int resizeResult = ResizePseudoConsole(pseudoConsoleHandle, consoleSize);
-                System.Diagnostics.Debug.WriteLine($"ResizePseudoConsole result: {resizeResult}");
 
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.Initialize failed: {ex.Message}");
+                Debug.WriteLine($"Exception in Initialize: {ex}");
                 Cleanup();
                 return false;
             }
@@ -277,59 +268,36 @@ namespace ClaudeVS
             {
                 if (!CreatePipe(out inputReadPipe, out inputWritePipe, IntPtr.Zero, 0))
                 {
-                    System.Diagnostics.Debug.WriteLine($"CreatePipe for input failed: {Marshal.GetLastWin32Error()}");
                     return false;
                 }
 
-                System.Diagnostics.Debug.WriteLine("Input pipes created successfully");
-
                 if (!SetHandleInformation(inputWritePipe, HANDLE_FLAG_INHERIT, 0))
                 {
-                    System.Diagnostics.Debug.WriteLine($"SetHandleInformation for inputWritePipe (parent) failed: {Marshal.GetLastWin32Error()}");
                     return false;
                 }
 
                 if (!CreatePipe(out outputReadPipe, out outputWritePipe, IntPtr.Zero, 0))
                 {
-                    System.Diagnostics.Debug.WriteLine($"CreatePipe for output failed: {Marshal.GetLastWin32Error()}");
                     return false;
                 }
-
-                System.Diagnostics.Debug.WriteLine($"Output pipes created: outputReadPipe={outputReadPipe.DangerousGetHandle()}, outputWritePipe={outputWritePipe.DangerousGetHandle()}");
 
                 if (!SetHandleInformation(outputReadPipe, HANDLE_FLAG_INHERIT, 0))
                 {
-                    System.Diagnostics.Debug.WriteLine($"SetHandleInformation for outputReadPipe (parent) failed: {Marshal.GetLastWin32Error()}");
                     return false;
                 }
-
-                System.Diagnostics.Debug.WriteLine("Output pipes created successfully - stream will be created after ConPTY setup");
 
                 uint inputMode;
                 if (GetConsoleMode(inputReadPipe, out inputMode))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Current input console mode: 0x{inputMode:X8}");
-
                     uint newInputMode = inputMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-                    if (SetConsoleMode(inputReadPipe, newInputMode))
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Set input console mode to: 0x{newInputMode:X8}");
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"SetConsoleMode for input failed: {Marshal.GetLastWin32Error()}");
-                    }
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"GetConsoleMode for input failed (expected for pipe): {Marshal.GetLastWin32Error()}");
+                    SetConsoleMode(inputReadPipe, newInputMode);
                 }
 
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"CreateConsolePipes failed: {ex.Message}");
+                Debug.WriteLine($"Exception in CreateConsolePipes: {ex}");
                 return false;
             }
         }
@@ -340,8 +308,6 @@ namespace ClaudeVS
             {
                 COORD consoleSize = new COORD { X = (short)Columns, Y = (short)Rows };
 
-                System.Diagnostics.Debug.WriteLine($"Attempting to create pseudo-console with size: {Columns}x{Rows}");
-
                 int createResult = CreatePseudoConsole(
                     consoleSize,
                     inputReadPipe,
@@ -351,28 +317,24 @@ namespace ClaudeVS
 
                 if (createResult != 0)
                 {
-                    System.Diagnostics.Debug.WriteLine($"CreatePseudoConsole failed with error code: {createResult}");
                     return false;
                 }
 
                 if (pseudoConsoleHandle == IntPtr.Zero)
                 {
-                    System.Diagnostics.Debug.WriteLine("CreatePseudoConsole returned zero handle");
                     return false;
                 }
-
-                System.Diagnostics.Debug.WriteLine($"Pseudo-console created successfully with handle: {pseudoConsoleHandle}");
 
                 return true;
             }
             catch (EntryPointNotFoundException)
             {
-                System.Diagnostics.Debug.WriteLine("CreatePseudoConsole not available on this system (Windows 10 1909+ required)");
+                Debug.WriteLine("EntryPointNotFoundException in CreatePseudoConsoleSession: ConPTY API not available");
                 return false;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"CreatePseudoConsoleSession failed: {ex.Message}");
+                Debug.WriteLine($"Exception in CreatePseudoConsoleSession: {ex}");
                 return false;
             }
         }
@@ -385,7 +347,6 @@ namespace ClaudeVS
                 bool success = InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref lpSize);
                 if (success || lpSize == IntPtr.Zero)
                 {
-                    System.Diagnostics.Debug.WriteLine("Could not calculate the number of bytes for the attribute list");
                     return false;
                 }
 
@@ -396,7 +357,6 @@ namespace ClaudeVS
                 success = InitializeProcThreadAttributeList(startupInfo.lpAttributeList, 1, 0, ref lpSize);
                 if (!success)
                 {
-                    System.Diagnostics.Debug.WriteLine("Could not set up attribute list");
                     return false;
                 }
 
@@ -410,7 +370,6 @@ namespace ClaudeVS
                     IntPtr.Zero);
                 if (!success)
                 {
-                    System.Diagnostics.Debug.WriteLine("Could not set pseudoconsole thread attribute");
                     return false;
                 }
 
@@ -460,7 +419,6 @@ namespace ClaudeVS
                     out PROCESS_INFORMATION pInfo);
                 if (!success)
                 {
-                    System.Diagnostics.Debug.WriteLine("Could not create process");
                     return false;
                 }
 
@@ -477,102 +435,64 @@ namespace ClaudeVS
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"StartShellProcess failed: {ex.Message}");
+                Debug.WriteLine($"Exception in StartShellProcess: {ex}");
                 return false;
             }
         }
 
         private void ReadOutputSync(CancellationToken cancellationToken)
         {
-            System.Diagnostics.Trace.WriteLine("ConPtyTerminal.ReadOutputSync: METHOD ENTERED");
-
             try
             {
-                System.Diagnostics.Trace.WriteLine("ConPtyTerminal.ReadOutputSync: Starting SYNCHRONOUS output reading loop");
                 byte[] buffer = new byte[4096];
                 int loopCount = 0;
 
                 while (!cancellationToken.IsCancellationRequested && IsRunning && outputStream != null)
                 {
                     loopCount++;
-                    if (loopCount == 1)
-                    {
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: First iteration");
-                    }
-                    if (loopCount % 100 == 0)
-                    {
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Loop iteration {loopCount}");
-                    }
-
-                    System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Calling BLOCKING Read() (iteration {loopCount})");
 
                     int bytesRead = 0;
                     try
                     {
                         bytesRead = outputStream.Read(buffer, 0, buffer.Length);
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Read() returned {bytesRead} bytes");
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Read() threw exception: {ex.Message}");
+                        Debug.WriteLine($"Exception in ReadOutputSync stream read: {ex}");
                         break;
                     }
 
                     if (bytesRead > 0)
                     {
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Read {bytesRead} bytes from output stream");
                         string output = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Output text (first 100 chars): {output.Substring(0, Math.Min(100, output.Length))}");
 
                         if (OutputReceived != null)
                         {
-                            System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Invoking OutputReceived event with {output.Length} characters");
                             OutputReceived.Invoke(this, output);
-                        }
-                        else
-                        {
-                            System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: WARNING - OutputReceived event has no subscribers!");
                         }
                     }
                     else
                     {
-                        System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Read() returned 0 bytes - end of stream");
                         break;
                     }
                 }
-
-                System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync: Output reading loop finished after {loopCount} iterations");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.ReadOutputSync failed: {ex.Message}");
-                System.Diagnostics.Trace.WriteLine($"Stack trace: {ex.StackTrace}");
+                Debug.WriteLine($"Exception in ReadOutputSync: {ex}");
             }
         }
 
         private async Task ReadOutputAsync(CancellationToken cancellationToken)
         {
-            System.Diagnostics.Debug.WriteLine("ConPtyTerminal.ReadOutputAsync: METHOD ENTERED");
-
             try
             {
-                System.Diagnostics.Debug.WriteLine("ConPtyTerminal.ReadOutputAsync: Starting output reading loop");
                 byte[] buffer = new byte[4096];
                 int loopCount = 0;
 
                 while (!cancellationToken.IsCancellationRequested && IsRunning && outputStream != null)
                 {
                     loopCount++;
-                    if (loopCount == 1)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: First iteration of while loop");
-                    }
-                    if (loopCount % 100 == 0)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Loop iteration {loopCount}");
-                    }
-
-                    System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Calling ReadAsync (iteration {loopCount})");
 
                     var readTask = outputStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                     var delayTask = Task.Delay(100, cancellationToken);
@@ -582,36 +502,23 @@ namespace ClaudeVS
                     if (completedTask == readTask)
                     {
                         bytesRead = await readTask;
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: ReadAsync returned {bytesRead} bytes");
                     }
                     else
                     {
-                        if (loopCount <= 5)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: ReadAsync timed out after 100ms (iteration {loopCount})");
-                        }
                         continue;
                     }
 
                     if (bytesRead > 0)
                     {
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Read {bytesRead} bytes from output stream");
                         string output = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Output text (first 100 chars): {output.Substring(0, Math.Min(100, output.Length))}");
 
                         if (OutputReceived != null)
                         {
-                            System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Invoking OutputReceived event with {output.Length} characters");
                             OutputReceived.Invoke(this, output);
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: WARNING - OutputReceived event has no subscribers!");
                         }
                     }
                     else if (!IsRunning)
                     {
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Terminal no longer running, stopping");
                         break;
                     }
                     else
@@ -619,17 +526,14 @@ namespace ClaudeVS
                         await Task.Delay(10, cancellationToken);
                     }
                 }
-
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync: Output reading loop finished after {loopCount} iterations");
             }
             catch (OperationCanceledException)
             {
-                System.Diagnostics.Debug.WriteLine("ConPtyTerminal.ReadOutputAsync: Operation cancelled");
+                Debug.WriteLine("OperationCanceledException in ReadOutputAsync");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.ReadOutputAsync failed: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                Debug.WriteLine($"Exception in ReadOutputAsync: {ex}");
             }
         }
 
@@ -641,13 +545,11 @@ namespace ClaudeVS
             {
                 if (!IsRunning || shellProcessHandle == IntPtr.Zero)
                 {
-                    System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.WriteInput: Cannot write - terminal not running");
                     return;
                 }
 
                 if (inputWritePipe == null || inputWritePipe.IsInvalid || inputWritePipe.IsClosed)
                 {
-                    System.Diagnostics.Trace.WriteLine($"ConPtyTerminal.WriteInput: Cannot write - inputWritePipe is invalid/closed");
                     return;
                 }
 
@@ -660,8 +562,7 @@ namespace ClaudeVS
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.WriteInput failed: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                Debug.WriteLine($"Exception in WriteInput: {ex}");
             }
         }
 
@@ -673,8 +574,6 @@ namespace ClaudeVS
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.SendToClaude: Sending message='{message}'");
-
                 WriteInput(message);
 
                 if (bEnter)
@@ -682,23 +581,17 @@ namespace ClaudeVS
                     {
                         if (inputStream == null)
                         {
-                            System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.SendToClaude: Creating input FileStream");
                             inputStream = new FileStream(inputWritePipe, FileAccess.Write, 1024, false);
                         }
 
                         byte[] enterKey = new byte[] { 0x0D };
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.SendToClaude: Sending Enter key");
                         inputStream.Write(enterKey, 0, enterKey.Length);
                         inputStream.Flush();
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.SendToClaude: Enter key sent successfully");
                     }
-                    else
-                        System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.SendToClaude: Cannot send - inputWritePipe is invalid/closed");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.SendToClaude failed: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                Debug.WriteLine($"Exception in SendToClaude: {ex}");
             }
         }
 
@@ -707,11 +600,9 @@ namespace ClaudeVS
             try
             {
                 columns = 120;
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.Resize: Resizing to {columns}x{rows} (current: {Columns}x{Rows})");
 
                 if (!IsRunning || pseudoConsoleHandle == IntPtr.Zero)
                 {
-                    System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.Resize: Cannot resize - terminal not running or invalid handle");
                     return;
                 }
 
@@ -720,20 +611,10 @@ namespace ClaudeVS
 
                 COORD consoleSize = new COORD { X = (short)Columns, Y = (short)Rows };
                 int resizeResult = ResizePseudoConsole(pseudoConsoleHandle, consoleSize);
-
-                if (resizeResult == 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.Resize: Successfully resized to {Columns}x{Rows}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.Resize: ResizePseudoConsole failed with error code: {resizeResult}");
-                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ConPtyTerminal.Resize failed: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                Debug.WriteLine($"Exception in Resize: {ex}");
             }
         }
 
@@ -847,7 +728,7 @@ namespace ClaudeVS
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                Debug.WriteLine($"Exception in Cleanup: {ex}");
             }
         }
     }
