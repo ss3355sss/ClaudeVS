@@ -18,7 +18,7 @@ namespace ClaudeVS
     /// implementation of the IVsUIElementPane interface.
     /// </summary>
     [Guid("f4c7b9e2-3a5d-6c8f-1b2e-4a9d7c5f3e8b")]
-    public class ClaudeTerminal : ToolWindowPane, IOleCommandTarget
+    public class ClaudeTerminal : ToolWindowPane, IOleCommandTarget, IVsWindowFrameNotify3
     {
         private ConPtyTerminal conPtyTerminal;
         private ConPtyTerminalConnection terminalConnection;
@@ -62,6 +62,38 @@ namespace ClaudeVS
                 conPtyTerminal = null;
             }
             base.Dispose(disposing);
+        }
+
+        public int OnShow(int fShow)
+        {
+            if (fShow == (int)__FRAMESHOW.FRAMESHOW_WinShown || 
+                fShow == (int)__FRAMESHOW.FRAMESHOW_TabActivated ||
+                fShow == (int)__FRAMESHOW.FRAMESHOW_WinRestored)
+            {
+                var control = this.Content as ClaudeTerminalControl;
+                control?.FocusTerminal();
+            }
+            return VSConstants.S_OK;
+        }
+
+        public int OnMove(int x, int y, int w, int h)
+        {
+            return VSConstants.S_OK;
+        }
+
+        public int OnSize(int x, int y, int w, int h)
+        {
+            return VSConstants.S_OK;
+        }
+
+        public int OnDockableChange(int fDockable, int x, int y, int w, int h)
+        {
+            return VSConstants.S_OK;
+        }
+
+        public int OnClose(ref uint pgrfSaveOptions)
+        {
+            return VSConstants.S_OK;
         }
 
         int IOleCommandTarget.QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
