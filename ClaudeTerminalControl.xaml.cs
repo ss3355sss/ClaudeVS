@@ -3,6 +3,7 @@ namespace ClaudeVS
     using System;
     using System.Diagnostics;
     using System.IO;
+    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Media;
@@ -36,7 +37,7 @@ namespace ClaudeVS
             this.SizeChanged += ClaudeTerminalControl_SizeChanged;
         }
 
-        private void ClaudeTerminalControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
+        private async void ClaudeTerminalControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
             try
             {
@@ -73,7 +74,7 @@ namespace ClaudeVS
                     if (!string.IsNullOrEmpty(projectDir))
                     {
                         currentSolutionPath = projectDir;
-                        InitializeConPtyTerminal();
+                        await InitializeConPtyTerminalAsync();
                     }
 
                     isInitialized = true;
@@ -87,7 +88,7 @@ namespace ClaudeVS
             }
         }
 
-        private void InitializeConPtyTerminal()
+        private async Task InitializeConPtyTerminalAsync()
         {
             try
             {
@@ -100,7 +101,7 @@ namespace ClaudeVS
                     workingDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
                 }
 
-                bool initialized = conPtyTerminal.Initialize(workingDir);
+                bool initialized = await Task.Run(() => conPtyTerminal.Initialize(workingDir));
 
                 if (!initialized)
                 {
@@ -130,17 +131,21 @@ namespace ClaudeVS
                 };
                 TerminalControl.SetTheme(theme, "Consolas", 10, Colors.Transparent);
 
-                terminalConnection.WaitForConnectionReady();
-
                 TerminalControl.Connection = terminalConnection;
 
                 terminalConnection.Start();
 
                 needsResizeAfterOutput = true;
+
+                if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+                {
+                    var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+                    TerminalControl.TriggerResize(size);
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Exception in InitializeConPtyTerminal: {ex}");
+                Debug.WriteLine($"Exception in InitializeConPtyTerminalAsync: {ex}");
             }
         }
 
@@ -229,12 +234,12 @@ namespace ClaudeVS
             }
         }
 
-        private void RestartClaudeWithWorkingDirectory(string workingDirectory)
+        private async void RestartClaudeWithWorkingDirectory(string workingDirectory)
         {
             try
             {
                 StopClaude();
-                InitializeConPtyTerminal();
+                await InitializeConPtyTerminalAsync();
             }
             catch (Exception ex)
             {
@@ -357,7 +362,7 @@ namespace ClaudeVS
             }
         }
 
-        private void ChangeCommandButton_Click(object sender, RoutedEventArgs e)
+        private async void ChangeCommandButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -381,7 +386,7 @@ namespace ClaudeVS
                         {
                             currentSolutionPath = null;
                             StopClaude();
-                            InitializeConPtyTerminal();
+                            await InitializeConPtyTerminalAsync();
                         }
                     }
                 }
