@@ -56,7 +56,7 @@ namespace ClaudeVS
 
         public void WaitForConnectionReady()
         {
-            bool ready = connectionReadyEvent.Wait(TimeSpan.FromSeconds(5));
+            bool ready = connectionReadyEvent.Wait(TimeSpan.FromSeconds(2));
         }
 
         public void WriteInput(string data)
