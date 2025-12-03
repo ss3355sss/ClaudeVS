@@ -34,7 +34,7 @@
     </Buttons>
 
     <Bitmaps>
-      <Bitmap guid="guidImages" href="Resources\ClaudeToolWindowCommand.png" usedList="bmpPic1"/>
+      <Bitmap guid="guidImages" href="Resources\ClaudeVS_16.png" usedList="bmpPic1"/>
     </Bitmaps>
   </Commands>
 

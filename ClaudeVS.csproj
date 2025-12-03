@@ -85,6 +85,12 @@
     <Content Include="Resources\ClaudeToolWindowCommand.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="Resources\ClaudeVS_16.png">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\ClaudeVS_128.png">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="Lib\Microsoft.Terminal.Control.Debug.dll" Condition="'$(Configuration)' == 'Debug'">
       <IncludeInVSIX>true</IncludeInVSIX>
       <Link>Microsoft.Terminal.Control.dll</Link>
