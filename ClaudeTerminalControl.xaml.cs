@@ -392,6 +392,30 @@ namespace ClaudeVS
             }
         }
 
+        private void RestartAgentButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                needsResizeAfterOutput = true;
+                string projectDir = GetActiveProjectDirectory();
+                if (!string.IsNullOrEmpty(projectDir))
+                {
+                    currentSolutionPath = projectDir;
+                    RestartClaudeWithWorkingDirectory(projectDir);
+                }
+                else
+                {
+                    currentSolutionPath = null;
+                    StopClaude();
+                    InitializeConPtyTerminal();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in RestartAgentButton_Click: {ex}");
+            }
+        }
+
     }
 
 }
