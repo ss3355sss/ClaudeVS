@@ -51,6 +51,7 @@
     <Compile Include="ClaudeTerminalCommand.cs" />
     <Compile Include="SendFileLocationCommand.cs" />
     <Compile Include="SendCommentLineCommand.cs" />
+    <Compile Include="SendDebuggerExceptionCommand.cs" />
     <Compile Include="ClaudeTerminalControl.xaml.cs">
       <DependentUpon>ClaudeTerminalControl.xaml</DependentUpon>
     </Compile>
