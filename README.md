@@ -7,7 +7,7 @@ Simple integration of Claude Code CLI, Copilot CLI, Codex CLI and Gemini CLI int
 Currently, three actions are implemented:
 - Send active file path, line number and selected text to the agent
 - Have the agent execute a comment in code, similar to how Copilot's tab completion works but simpler
-- Send debugger exception/error information to the agent when execution is halted
+- Send exception & error to the agent from the debugger (error message, callstack, etc.)
 
 Nothing is saved by the extension: no credentials, conversations or anything since it just embeds the actual CLI programs inside Visual Studio.
 The project was written entirely by AI so it's got lots of useless comments and debug logging.
@@ -19,7 +19,7 @@ The project was written entirely by AI so it's got lots of useless comments and 
 | View -> ClaudeVS | Launch Claude Code CLI (requires an open project/solution) |
 | View -> Send Location to Agent | Send file path and line number along with any text that's selected |
 | View -> Send Task to Agent | Execute the current line as a command for code generation |
-| View -> Send Debugger Exception to Agent | Send error/exception info when debugger is halted (only visible during debug break) |
+| View -> Send Exception to Agent | Send exception & error to the agent from the debugger |
 
 All of these are hotkeyable:
 - View.ClaudeVS

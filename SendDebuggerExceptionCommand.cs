@@ -326,6 +326,14 @@ namespace ClaudeVS
 					}
 				}
 
+				string outputWindowText = GetLastOutputWindowLines(dte, 10);
+				if (!string.IsNullOrEmpty(outputWindowText))
+				{
+					message.AppendLine();
+					message.AppendLine("=== OUTPUT WINDOW (Last 10 lines) ===");
+					message.AppendLine(outputWindowText);
+				}
+
 				ToolWindowPane window = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
 				if (window != null && window.Content is ClaudeTerminalControl control)
 				{
@@ -455,6 +463,59 @@ namespace ClaudeVS
 			catch { }
 
 			return null;
+		}
+
+		private string GetLastOutputWindowLines(DTE2 dte, int lineCount)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			try
+			{
+				OutputWindow outputWindow = dte.ToolWindows.OutputWindow;
+				if (outputWindow == null || outputWindow.OutputWindowPanes == null)
+					return null;
+
+				OutputWindowPane debugPane = null;
+				foreach (OutputWindowPane pane in outputWindow.OutputWindowPanes)
+				{
+					if (pane.Name == "Debug")
+					{
+						debugPane = pane;
+						break;
+					}
+				}
+
+				if (debugPane == null)
+					return null;
+
+				TextDocument textDoc = debugPane.TextDocument;
+				if (textDoc == null)
+					return null;
+
+				EditPoint startPoint = textDoc.StartPoint.CreateEditPoint();
+				EditPoint endPoint = textDoc.EndPoint.CreateEditPoint();
+				string allText = startPoint.GetText(endPoint);
+
+				if (string.IsNullOrEmpty(allText))
+					return null;
+
+				string[] allLines = allText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+				var nonEmptyLines = new System.Collections.Generic.List<string>();
+				for (int i = allLines.Length - 1; i >= 0 && nonEmptyLines.Count < lineCount; i--)
+				{
+					if (!string.IsNullOrWhiteSpace(allLines[i]))
+						nonEmptyLines.Insert(0, allLines[i]);
+				}
+
+				if (nonEmptyLines.Count == 0)
+					return null;
+
+				return string.Join(Environment.NewLine, nonEmptyLines);
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Failed to get output window text: {ex.Message}");
+				return null;
+			}
 		}
 	}
 }
