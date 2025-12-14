@@ -334,10 +334,16 @@ namespace ClaudeVS
 					message.AppendLine(outputWindowText);
 				}
 
-				ToolWindowPane window = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
-				if (window != null && window.Content is ClaudeTerminalControl control)
+				ToolWindowPane window = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, true);
+				if (window?.Frame is IVsWindowFrame windowFrame)
 				{
-					control.SendToClaude(message.ToString(), true);
+					Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+
+					if (window.Content is ClaudeTerminalControl control)
+					{
+						control.SendToClaude(message.ToString(), true);
+						control.FocusTerminal();
+					}
 				}
 			}
 			catch (Exception ex)
