@@ -58,6 +58,9 @@
     <Compile Include="CommandInputDialog.xaml.cs">
       <DependentUpon>CommandInputDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FontSizeDialog.xaml.cs">
+      <DependentUpon>FontSizeDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ConPtyTerminal.cs" />
     <Compile Include="ConPtyTerminalConnection.cs" />
     <Compile Include="SettingsManager.cs" />
@@ -73,6 +76,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CommandInputDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FontSizeDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

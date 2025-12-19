@@ -11,6 +11,8 @@ namespace ClaudeVS
         private const string CollectionPath = "ClaudeVS";
         private const string LastCommandKey = "LastCommand";
         private const string DefaultCommand = "claude";
+        private const string FontSizeKey = "FontSize";
+        private const short DefaultFontSize = 10;
 
         public static string GetLastCommand()
         {
@@ -58,6 +60,55 @@ namespace ClaudeVS
             catch (Exception ex)
             {
                 Debug.WriteLine($"Exception in SaveLastCommand: {ex}");
+            }
+        }
+
+        public static short GetFontSize()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var settingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(CollectionPath))
+                {
+                    return DefaultFontSize;
+                }
+
+                if (!userSettingsStore.PropertyExists(CollectionPath, FontSizeKey))
+                {
+                    return DefaultFontSize;
+                }
+
+                int fontSize = userSettingsStore.GetInt32(CollectionPath, FontSizeKey);
+                return (short)fontSize;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in GetFontSize: {ex}");
+                return DefaultFontSize;
+            }
+        }
+
+        public static void SaveFontSize(short fontSize)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var settingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(CollectionPath))
+                {
+                    userSettingsStore.CreateCollection(CollectionPath);
+                }
+
+                userSettingsStore.SetInt32(CollectionPath, FontSizeKey, fontSize);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in SaveFontSize: {ex}");
             }
         }
     }

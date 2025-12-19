@@ -23,6 +23,7 @@ namespace ClaudeVS
         private string currentCommand = "claude";
         private bool needsResizeAfterOutput = false;
         private string currentSolutionPath = null;
+        private short currentFontSize = 10;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClaudeTerminalControl"/> class.
@@ -41,6 +42,7 @@ namespace ClaudeVS
             try
             {
                 currentCommand = SettingsManager.GetLastCommand();
+                currentFontSize = SettingsManager.GetFontSize();
 
                 // If terminal already exists and is running, don't reinitialize
                 if (claudeTerminal?.Terminal != null)
@@ -128,7 +130,7 @@ namespace ClaudeVS
                         0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFFF2F2F2
                     }
                 };
-                TerminalControl.SetTheme(theme, "Consolas", 10, Colors.Transparent);
+                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, Colors.Transparent);
 
                 terminalConnection.WaitForConnectionReady();
 
@@ -168,8 +170,7 @@ namespace ClaudeVS
                 var terminalConnection = claudeTerminal?.TerminalConnection;
                 if (terminalConnection != null && TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
                 {
-                    double fontSize = 10;
-                    double charHeight = fontSize * 1.2;
+                    double charHeight = currentFontSize * 1.2;
 
                     uint columns = 120;
                     uint rows = (uint)Math.Max(1, TerminalControl.ActualHeight / charHeight);
@@ -413,6 +414,61 @@ namespace ClaudeVS
             catch (Exception ex)
             {
                 Debug.WriteLine($"Exception in RestartAgentButton_Click: {ex}");
+            }
+        }
+
+        private void FontSizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new FontSizeDialog(currentFontSize);
+                dialog.Owner = Application.Current?.MainWindow;
+                if (dialog.ShowDialog() == true)
+                {
+                    short newFontSize = dialog.SelectedFontSize;
+                    if (newFontSize != currentFontSize)
+                    {
+                        currentFontSize = newFontSize;
+                        SettingsManager.SaveFontSize(currentFontSize);
+                        ApplyFontSize();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in FontSizeButton_Click: {ex}");
+            }
+        }
+
+        private void ApplyFontSize()
+        {
+            try
+            {
+                var theme = new TerminalTheme
+                {
+                    DefaultBackground = 0xFF1e1e1e,
+                    DefaultForeground = 0xFFd4d4d4,
+                    DefaultSelectionBackground = 0xFF264F78,
+                    CursorStyle = CursorStyle.BlinkingBar,
+                    ColorTable = new uint[]
+                    {
+                        0xFF0C0C0C, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
+                        0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFFCCCCCC,
+                        0xFF767676, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
+                        0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFFF2F2F2
+                    }
+                };
+                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, Colors.Transparent);
+
+                if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+                {
+                    var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+                    TerminalControl.TriggerResize(size);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in ApplyFontSize: {ex}");
             }
         }
 
