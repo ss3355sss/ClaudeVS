@@ -37,6 +37,38 @@
           <ButtonText>Send Exception to Agent</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction1CommandId" priority="0x0105" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Agent Action 1</ButtonText>
+          <LocCanonicalName>.ClaudeVS.AgentAction1</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction2CommandId" priority="0x0106" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Agent Action 2</ButtonText>
+          <LocCanonicalName>.ClaudeVS.AgentAction2</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction3CommandId" priority="0x0107" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Agent Action 3</ButtonText>
+          <LocCanonicalName>.ClaudeVS.AgentAction3</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction4CommandId" priority="0x0108" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Agent Action 4</ButtonText>
+          <LocCanonicalName>.ClaudeVS.AgentAction4</LocCanonicalName>
+        </Strings>
+      </Button>
     </Buttons>
 
     <Bitmaps>
@@ -44,8 +76,16 @@
     </Bitmaps>
   </Commands>
 
+  <KeyBindings>
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction1CommandId" editor="guidClaudeTerminal" key1="T" mod1="Control" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction2CommandId" editor="guidClaudeTerminal" key1="R" mod1="Control" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction3CommandId" editor="guidClaudeTerminal" key1="O" mod1="Control" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction4CommandId" editor="guidClaudeTerminal" key1="B" mod1="Control" />
+  </KeyBindings>
+
   <Symbols>
     <GuidSymbol name="guidClaudeVSPackage" value="{b7d90b76-b34d-46e0-ab4f-888666287245}" />
+    <GuidSymbol name="guidClaudeTerminal" value="{f4c7b9e2-3a5d-6c8f-1b2e-4a9d7c5f3e8b}" />
 
     <GuidSymbol name="guidClaudeVSPackageCmdSet" value="{a7c8e9d0-1234-5678-9abc-def012345678}">
       <IDSymbol name="ClaudeMenuGroup" value="0x1020" />
@@ -53,6 +93,10 @@
       <IDSymbol name="SendFileLocationCommandId" value="0x0102" />
       <IDSymbol name="SendCommentLineCommandId" value="0x0103" />
       <IDSymbol name="SendDebuggerExceptionCommandId" value="0x0104" />
+      <IDSymbol name="AgentAction1CommandId" value="0x0105" />
+      <IDSymbol name="AgentAction2CommandId" value="0x0106" />
+      <IDSymbol name="AgentAction3CommandId" value="0x0107" />
+      <IDSymbol name="AgentAction4CommandId" value="0x0108" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{d8f1a2b3-4c5e-6f7a-8b9c-0d1e2f3a4b5c}" >

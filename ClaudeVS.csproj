@@ -52,6 +52,7 @@
     <Compile Include="SendFileLocationCommand.cs" />
     <Compile Include="SendCommentLineCommand.cs" />
     <Compile Include="SendDebuggerExceptionCommand.cs" />
+    <Compile Include="AgentActionCommand.cs" />
     <Compile Include="ClaudeTerminalControl.xaml.cs">
       <DependentUpon>ClaudeTerminalControl.xaml</DependentUpon>
     </Compile>
@@ -111,6 +112,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="VSPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

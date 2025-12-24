@@ -27,6 +27,7 @@ namespace ClaudeVS
     [Guid(ClaudeVSPackage.PackageGuidString)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(ClaudeTerminal))]
+    [ProvideKeyBindingTable("f4c7b9e2-3a5d-6c8f-1b2e-4a9d7c5f3e8b", 102)]
     public sealed class ClaudeVSPackage : AsyncPackage
     {
         /// <summary>
@@ -53,6 +54,7 @@ namespace ClaudeVS
             await SendFileLocationCommand.InitializeAsync(this);
             await SendCommentLineCommand.InitializeAsync(this);
             await SendDebuggerExceptionCommand.InitializeAsync(this);
+            await AgentActionCommand.InitializeAsync(this);
         }
 
         #endregion
