@@ -556,7 +556,10 @@ namespace ClaudeVS
                 if (inputStream == null)
                     inputStream = new FileStream(inputWritePipe, FileAccess.Write, 1024, false);
 
-                byte[] buffer = Encoding.UTF8.GetBytes(text);
+                // Convert Windows line endings to Linux style (\n)
+                string processedText = text.Replace("\r\n", "\n");
+
+                byte[] buffer = Encoding.UTF8.GetBytes(processedText);
                 inputStream.Write(buffer, 0, buffer.Length);
                 inputStream.Flush();
             }

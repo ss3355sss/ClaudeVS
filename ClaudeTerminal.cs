@@ -7,6 +7,7 @@ namespace ClaudeVS
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.OLE.Interop;
     using Microsoft.VisualStudio;
+    using System.ComponentModel.Design;
 
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
@@ -45,6 +46,7 @@ namespace ClaudeVS
             }
 
             this.Content = new ClaudeTerminalControl(this);
+            this.ToolBar = null;
         }
 
         public void SetTerminalInstances(ConPtyTerminal terminal, ConPtyTerminalConnection connection)
@@ -98,10 +100,10 @@ namespace ClaudeVS
 
         int IOleCommandTarget.QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
         {
-            IOleCommandTarget baseTarget = (IOleCommandTarget)base.GetService(typeof(IOleCommandTarget));
-            if (baseTarget != null)
+            var commandService = this.GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
+            if (commandService != null)
             {
-                return baseTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+                return commandService.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
             }
             return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_UNKNOWNGROUP;
         }
@@ -120,10 +122,10 @@ namespace ClaudeVS
                 }
             }
 
-            IOleCommandTarget baseTarget = (IOleCommandTarget)base.GetService(typeof(IOleCommandTarget));
-            if (baseTarget != null)
+            var commandService = this.GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
+            if (commandService != null)
             {
-                return baseTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+                return commandService.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
             }
             return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED;
         }
