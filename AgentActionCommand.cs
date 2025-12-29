@@ -18,6 +18,7 @@ namespace ClaudeVS
         public const int AgentAction2Id = 0x0106;
         public const int AgentAction3Id = 0x0107;
         public const int AgentAction4Id = 0x0108;
+        public const int AgentAction5Id = 0x0109;
 
         /// <summary>
         /// Command set GUID.
@@ -53,6 +54,7 @@ namespace ClaudeVS
             AddCommand(commandService, AgentAction2Id);
             AddCommand(commandService, AgentAction3Id);
             AddCommand(commandService, AgentAction4Id);
+            AddCommand(commandService, AgentAction5Id);
         }
 
         private void AddCommand(OleMenuCommandService commandService, int commandId)
@@ -147,6 +149,7 @@ namespace ClaudeVS
                     case AgentAction2Id: suffix = "AgentAction2"; break;
                     case AgentAction3Id: suffix = "AgentAction3"; break;
                     case AgentAction4Id: suffix = "AgentAction4"; break;
+                    case AgentAction5Id: suffix = "AgentAction5"; break;
                     default: return null;
                 }
 
@@ -208,6 +211,16 @@ namespace ClaudeVS
                     // Ctrl+Letter (Shift doesn't change control code usually for A-Z)
                     char c = char.ToUpper(key[0]);
                     return ((char)(c - 'A' + 1)).ToString();
+                }
+                else if (alt && !ctrl)
+                {
+                    // Alt+Letter -> Escape + Letter
+                    char c = key[0];
+                    if (!shift)
+                    {
+                        c = char.ToLower(c);
+                    }
+                    return $"\x1b{c}";
                 }
             }
 
