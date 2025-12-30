@@ -77,6 +77,14 @@
           <LocCanonicalName>.ClaudeVS.AgentAction5</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction6CommandId" priority="0x010A" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Agent Action 6</ButtonText>
+          <LocCanonicalName>.ClaudeVS.AgentAction6</LocCanonicalName>
+        </Strings>
+      </Button>
     </Buttons>
 
     <Bitmaps>
@@ -90,6 +98,7 @@
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction3CommandId" editor="guidClaudeTerminal" key1="O" mod1="Control" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction4CommandId" editor="guidClaudeTerminal" key1="B" mod1="Control" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction5CommandId" editor="guidClaudeTerminal" key1="V" mod1="Alt" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction6CommandId" editor="guidClaudeTerminal" key1="V" mod1="Control" />
   </KeyBindings>
 
   <Symbols>
@@ -107,6 +116,7 @@
       <IDSymbol name="AgentAction3CommandId" value="0x0107" />
       <IDSymbol name="AgentAction4CommandId" value="0x0108" />
       <IDSymbol name="AgentAction5CommandId" value="0x0109" />
+      <IDSymbol name="AgentAction6CommandId" value="0x010A" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{d8f1a2b3-4c5e-6f7a-8b9c-0d1e2f3a4b5c}" >

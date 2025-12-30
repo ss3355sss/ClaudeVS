@@ -4,6 +4,7 @@ namespace ClaudeVS
     using System.ComponentModel.Design;
     using System.Diagnostics;
     using System.Linq;
+    using System.Windows;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Shell;
@@ -19,9 +20,10 @@ namespace ClaudeVS
         public const int AgentAction3Id = 0x0107;
         public const int AgentAction4Id = 0x0108;
         public const int AgentAction5Id = 0x0109;
+        public const int AgentAction6Id = 0x010A;
 
         /// <summary>
-        /// Command set GUID.
+        /// Command menu group (command set GUID).
         /// </summary>
         public static readonly Guid CommandSet = new Guid("a7c8e9d0-1234-5678-9abc-def012345678");
 
@@ -32,29 +34,24 @@ namespace ClaudeVS
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AgentActionCommand"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table).
+        /// Adds our command handlers for the agent actions.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
         private AgentActionCommand(AsyncPackage package, OleMenuCommandService commandService)
         {
-            if (package == null)
-            {
-                Debug.WriteLine("ArgumentNullException in AgentActionCommand constructor: package is null");
-                throw new ArgumentNullException(nameof(package));
-            }
+            this.package = package ?? throw new ArgumentNullException(nameof(package));
             if (commandService == null)
             {
-                Debug.WriteLine("ArgumentNullException in AgentActionCommand constructor: commandService is null");
                 throw new ArgumentNullException(nameof(commandService));
             }
-            this.package = package;
 
             AddCommand(commandService, AgentAction1Id);
             AddCommand(commandService, AgentAction2Id);
             AddCommand(commandService, AgentAction3Id);
             AddCommand(commandService, AgentAction4Id);
             AddCommand(commandService, AgentAction5Id);
+            AddCommand(commandService, AgentAction6Id);
         }
 
         private void AddCommand(OleMenuCommandService commandService, int commandId)
@@ -106,9 +103,29 @@ namespace ClaudeVS
             var menuCommand = sender as MenuCommand;
             if (menuCommand == null) return;
 
-            string charToSend = GetInputForCommand(menuCommand.CommandID.ID);
+            string inputToSend = null;
 
-            if (string.IsNullOrEmpty(charToSend))
+            if (menuCommand.CommandID.ID == AgentAction6Id)
+            {
+                // Handle paste
+                try
+                {
+                    if (Clipboard.ContainsText())
+                    {
+                        inputToSend = Clipboard.GetText();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"AgentActionCommand: Exception accessing clipboard: {ex}");
+                }
+            }
+            else
+            {
+                inputToSend = GetInputForCommand(menuCommand.CommandID.ID);
+            }
+
+            if (string.IsNullOrEmpty(inputToSend))
             {
                 Debug.WriteLine($"AgentActionCommand: No valid input mapped for command {menuCommand.CommandID.ID}");
                 return;
@@ -124,7 +141,7 @@ namespace ClaudeVS
             var terminalWindow = window as ClaudeTerminal;
             if (terminalWindow?.Terminal != null && terminalWindow.Terminal.IsRunning)
             {
-                terminalWindow.Terminal.WriteInput(charToSend);
+                terminalWindow.Terminal.WriteInput(inputToSend);
                 Debug.WriteLine($"AgentActionCommand sent input to terminal");
             }
             else
@@ -147,11 +164,14 @@ namespace ClaudeVS
                 {
                     case AgentAction1Id: suffix = "AgentAction1"; break;
                     case AgentAction2Id: suffix = "AgentAction2"; break;
-                    case AgentAction3Id: suffix = "AgentAction3"; break;
-                    case AgentAction4Id: suffix = "AgentAction4"; break;
-                    case AgentAction5Id: suffix = "AgentAction5"; break;
-                    default: return null;
-                }
+                case AgentAction3Id: suffix = "AgentAction3"; break;
+                case AgentAction4Id: suffix = "AgentAction4"; break;
+                case AgentAction5Id: suffix = "AgentAction5"; break;
+                case AgentAction6Id: suffix = "AgentAction6"; break;
+                default:
+                    Debug.WriteLine($"AgentActionCommand: Unknown command ID {commandId}");
+                    return null;
+            }
 
                 // VS commands are typically named "PackageName.CommandName" or just "CommandName" depending on registration.
                 // The LocCanonicalName is ".ClaudeVS.AgentAction1" (dot at start?)
