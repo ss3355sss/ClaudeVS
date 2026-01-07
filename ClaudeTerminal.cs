@@ -68,9 +68,10 @@ namespace ClaudeVS
 
         public int OnShow(int fShow)
         {
-            if (fShow == (int)__FRAMESHOW.FRAMESHOW_WinShown || 
+            if (fShow == (int)__FRAMESHOW.FRAMESHOW_WinShown ||
                 fShow == (int)__FRAMESHOW.FRAMESHOW_TabActivated ||
-                fShow == (int)__FRAMESHOW.FRAMESHOW_WinRestored)
+                fShow == (int)__FRAMESHOW.FRAMESHOW_WinRestored ||
+                fShow == 12)
             {
                 var control = this.Content as ClaudeTerminalControl;
                 control?.FocusTerminal();

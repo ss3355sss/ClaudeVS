@@ -3,9 +3,14 @@ namespace ClaudeVS
     using System;
     using System.Diagnostics;
     using System.IO;
+    using System.Runtime.InteropServices;
+    using System.Windows.Threading;
     using System.Windows;
     using System.Windows.Controls;
+    using System.Windows.Input;
+    using System.Windows.Interop;
     using System.Windows.Media;
+    using System.Windows.Media.Media3D;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.Terminal.Wpf;
@@ -16,6 +21,9 @@ namespace ClaudeVS
     /// </summary>
     public partial class ClaudeTerminalControl : UserControl
     {
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetFocus(IntPtr hWnd);
+
         private ClaudeTerminal claudeTerminal;
         private DTE2 dte;
         private SolutionEvents solutionEvents;
@@ -35,6 +43,7 @@ namespace ClaudeVS
             this.Loaded += ClaudeTerminalControl_Loaded;
             this.Unloaded += ClaudeTerminalControl_Unloaded;
             this.SizeChanged += ClaudeTerminalControl_SizeChanged;
+            this.IsVisibleChanged += ClaudeTerminalControl_IsVisibleChanged;
         }
 
         private void ClaudeTerminalControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
@@ -323,16 +332,72 @@ namespace ClaudeVS
             }
         }
 
+        private DispatcherTimer focusTimer;
+
         public void FocusTerminal()
         {
             try
             {
-                TerminalControl.Focus();
+                if (focusTimer != null)
+                {
+                    focusTimer.Stop();
+                }
+
+                focusTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(100)
+                };
+                focusTimer.Tick += (s, e) =>
+                {
+                    focusTimer.Stop();
+                    try
+                    {
+                        var hwndHost = FindVisualChild<HwndHost>(TerminalControl);
+                        if (hwndHost != null && hwndHost.Handle != IntPtr.Zero)
+                        {
+                            SetFocus(hwndHost.Handle);
+                        }
+                        TerminalControl.Focus();
+                        Keyboard.Focus(TerminalControl);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Exception in FocusTerminal timer: {ex}");
+                    }
+                };
+                focusTimer.Start();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Exception in FocusTerminal: {ex}");
             }
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result)
+                    return result;
+                var descendant = FindVisualChild<T>(child);
+                if (descendant != null)
+                    return descendant;
+            }
+            return null;
+        }
+
+        private void ClaudeTerminalControl_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource == this)
+            {
+                FocusTerminal();
+                e.Handled = true;
+            }
+        }
+
+        private void ClaudeTerminalControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
         }
 
         private void ConPtyTerminal_OutputReceived(object sender, string e)

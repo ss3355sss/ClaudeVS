@@ -12,7 +12,8 @@
              Foreground="#d4d4d4"
              KeyboardNavigation.TabNavigation="Local"
              KeyboardNavigation.DirectionalNavigation="Contained"
-             KeyboardNavigation.ControlTabNavigation="Local">
+             KeyboardNavigation.ControlTabNavigation="Local"
+             GotFocus="ClaudeTerminalControl_GotFocus">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
