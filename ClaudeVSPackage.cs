@@ -55,6 +55,7 @@ namespace ClaudeVS
             await SendCommentLineCommand.InitializeAsync(this);
             await SendDebuggerExceptionCommand.InitializeAsync(this);
             await AgentActionCommand.InitializeAsync(this);
+            await SpeechCommand.InitializeAsync(this);
         }
 
         #endregion

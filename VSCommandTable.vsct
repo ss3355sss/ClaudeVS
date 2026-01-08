@@ -85,6 +85,14 @@
           <LocCanonicalName>.ClaudeVS.AgentAction6</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="SpeechCommandId" priority="0x010B" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Toggle Speech Input</ButtonText>
+          <LocCanonicalName>.ClaudeVS.SpeechCommand</LocCanonicalName>
+        </Strings>
+      </Button>
     </Buttons>
 
     <Bitmaps>
@@ -99,6 +107,7 @@
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction4CommandId" editor="guidClaudeTerminal" key1="B" mod1="Control" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction5CommandId" editor="guidClaudeTerminal" key1="V" mod1="Alt" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction6CommandId" editor="guidClaudeTerminal" key1="V" mod1="Control" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="SpeechCommandId" editor="guidClaudeTerminal" key1="S" mod1="Alt" />
   </KeyBindings>
 
   <Symbols>
@@ -117,6 +126,7 @@
       <IDSymbol name="AgentAction4CommandId" value="0x0108" />
       <IDSymbol name="AgentAction5CommandId" value="0x0109" />
       <IDSymbol name="AgentAction6CommandId" value="0x010A" />
+      <IDSymbol name="SpeechCommandId" value="0x010B" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{d8f1a2b3-4c5e-6f7a-8b9c-0d1e2f3a4b5c}" >
