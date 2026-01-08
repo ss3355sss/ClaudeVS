@@ -26,6 +26,57 @@
                 BorderThickness="0"
                 Padding="4">
             <StackPanel Orientation="Horizontal">
+            <ToggleButton x:Name="MicButton"
+                    Content="🎤 Mic"
+                    Padding="4,2"
+                    FontSize="12"
+					Margin="0,0,8,0"
+                    HorizontalAlignment="Left"
+                    Background="#1e1e1e"
+                    Foreground="#d4d4d4"
+                    BorderBrush="#1e1e1e"
+                    BorderThickness="0"
+                    Focusable="False"
+                    IsTabStop="False"
+                    Checked="MicButton_Checked"
+                    Unchecked="MicButton_Unchecked">
+                <ToggleButton.Style>
+                    <Style TargetType="ToggleButton">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="ButtonBorder"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="ButtonBorder" Property="Background" Value="#2d7d2d"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ButtonBorder" Property="Background" Value="#444444"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="ButtonBorder" Property="Background" Value="#3f3f46"/>
+                                        </Trigger>
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsChecked" Value="True"/>
+                                                <Condition Property="IsMouseOver" Value="True"/>
+                                            </MultiTrigger.Conditions>
+                                            <Setter TargetName="ButtonBorder" Property="Background" Value="#3a9a3a"/>
+                                        </MultiTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ToggleButton.Style>
+            </ToggleButton>
+
             <Button x:Name="ChangeCommandButton"
                     Content="⚙ Change Agent"
                     Padding="4,2"

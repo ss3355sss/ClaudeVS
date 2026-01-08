@@ -21,7 +21,11 @@ namespace ClaudeVS
         private readonly AsyncPackage package;
         private SpeechRecognizer speechRecognizer;
         private bool isListening;
+        private bool cancellationRequested;
         private System.Collections.Generic.Dictionary<object, object> originalResources;
+
+        public bool IsListening => isListening;
+        public event Action<bool> ListeningStateChanged;
 
         private SpeechCommand(AsyncPackage package, OleMenuCommandService commandService)
         {
@@ -52,15 +56,23 @@ namespace ClaudeVS
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (isListening)
+            ToolWindowPane window = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
+            if (window == null)
             {
+                Debug.WriteLine("SpeechCommand: Terminal window not found");
                 return;
             }
 
-            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            var terminalWindow = window as ClaudeTerminal;
+            var terminalControl = terminalWindow?.Content as ClaudeTerminalControl;
+            if (terminalControl != null)
             {
-                await StartListeningAsync();
-            });
+                var micButton = terminalControl.FindName("MicButton") as System.Windows.Controls.Primitives.ToggleButton;
+                if (micButton != null)
+                {
+                    micButton.IsChecked = !micButton.IsChecked;
+                }
+            }
         }
 
         private static bool IsRunningAsAdmin()
@@ -84,6 +96,7 @@ namespace ClaudeVS
                 if (IsRunningAsAdmin())
                 {
                     SetStatusBarText("Speech unavailable (admin mode)");
+                    ListeningStateChanged?.Invoke(false);
                     MessageBox.Show("Speech recognition is not available when Visual Studio is running as Administrator.\n\nThis is a Windows limitation. Please restart Visual Studio without admin privileges to use speech input.", "Speech Recognition", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
@@ -99,11 +112,13 @@ namespace ClaudeVS
                     {
                         Debug.WriteLine($"SpeechCommand: Failed to compile constraints: {compilationResult.Status}");
                         SetStatusBarText($"Speech error: {compilationResult.Status}");
+                        ListeningStateChanged?.Invoke(false);
                         return;
                     }
                 }
 
                 isListening = true;
+                cancellationRequested = false;
                 SetStatusBarBackground(true);
                 Console.Beep(700, 150);
                 Console.Beep(800, 200);
@@ -115,11 +130,21 @@ namespace ClaudeVS
                 var result = await speechRecognizer.RecognizeAsync();
 
                 isListening = false;
-                Console.Beep(600, 100);
-                Console.Beep(600, 100);
+                ListeningStateChanged?.Invoke(false);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 SetStatusBarBackground(false);
+
+                if (cancellationRequested)
+                {
+                    Debug.WriteLine("SpeechCommand: Recognition was cancelled");
+                    SetStatusBarText("Speech cancelled");
+                    Console.Beep(400, 100);
+                    return;
+                }
+
+                Console.Beep(600, 100);
+                Console.Beep(600, 100);
                 SetStatusBarText("Ready");
 
                 if (result.Status == SpeechRecognitionResultStatus.Success && !string.IsNullOrEmpty(result.Text))
@@ -135,12 +160,48 @@ namespace ClaudeVS
             catch (Exception ex)
             {
                 isListening = false;
+                ListeningStateChanged?.Invoke(false);
+                if (cancellationRequested)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    SetStatusBarBackground(false);
+                    SetStatusBarText("Speech cancelled");
+                    return;
+                }
                 Trace.WriteLine($"[ClaudeVS] Speech recognition error: {ex.GetType().Name}: {ex.Message} (HResult: 0x{ex.HResult:X8})");
                 Trace.WriteLine($"[ClaudeVS] Stack trace: {ex.StackTrace}");
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 SetStatusBarBackground(false);
                 SetStatusBarText($"Speech error: {ex.Message}");
                 MessageBox.Show($"Speech recognition error:\n\n{ex.GetType().Name}: {ex.Message}\n\nHResult: 0x{ex.HResult:X8}\n\n{ex.StackTrace}", "Speech Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public void StartListening()
+        {
+            if (isListening)
+                return;
+
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await StartListeningAsync();
+            });
+        }
+
+        public async Task StopListeningAsync()
+        {
+            if (!isListening || speechRecognizer == null)
+                return;
+
+            cancellationRequested = true;
+
+            try
+            {
+                await speechRecognizer.StopRecognitionAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"SpeechCommand: Error stopping recognition: {ex}");
             }
         }
 

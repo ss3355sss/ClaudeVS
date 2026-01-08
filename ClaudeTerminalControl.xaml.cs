@@ -11,6 +11,7 @@ namespace ClaudeVS
     using System.Windows.Interop;
     using System.Windows.Media;
     using System.Windows.Media.Media3D;
+    using System.Windows.Controls.Primitives;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.Terminal.Wpf;
@@ -535,6 +536,52 @@ namespace ClaudeVS
             {
                 Debug.WriteLine($"Exception in ApplyFontSize: {ex}");
             }
+        }
+
+        private void MicButton_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var speechCommand = SpeechCommand.Instance;
+                if (speechCommand != null)
+                {
+                    speechCommand.ListeningStateChanged -= OnListeningStateChanged;
+                    speechCommand.ListeningStateChanged += OnListeningStateChanged;
+                    speechCommand.StartListening();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in MicButton_Checked: {ex}");
+                MicButton.IsChecked = false;
+            }
+        }
+
+        private void MicButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var speechCommand = SpeechCommand.Instance;
+                if (speechCommand != null && speechCommand.IsListening)
+                {
+                    _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    {
+                        await speechCommand.StopListeningAsync();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in MicButton_Unchecked: {ex}");
+            }
+        }
+
+        private void OnListeningStateChanged(bool isListening)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                MicButton.IsChecked = isListening;
+            }));
         }
 
     }
