@@ -341,7 +341,7 @@ namespace ClaudeVS
 
 					if (window.Content is ClaudeTerminalControl control)
 					{
-						control.SendToClaude(message.ToString(), true);
+						control.SendToClaude("\x1b[200~" + message.ToString() + "\x1b[201~", true);
 						control.FocusTerminal();
 					}
 				}

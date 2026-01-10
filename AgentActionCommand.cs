@@ -107,12 +107,13 @@ namespace ClaudeVS
 
             if (menuCommand.CommandID.ID == AgentAction6Id)
             {
-                // Handle paste
+                // Handle paste with bracketed paste mode
                 try
                 {
                     if (Clipboard.ContainsText())
                     {
-                        inputToSend = Clipboard.GetText();
+                        string text = Clipboard.GetText();
+                        inputToSend = "\x1b[200~" + text + "\x1b[201~";
                     }
                 }
                 catch (Exception ex)

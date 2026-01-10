@@ -64,7 +64,12 @@ namespace ClaudeVS
             try
             {
                 if (conPtyTerminal != null && conPtyTerminal.IsRunning)
-                    conPtyTerminal.WriteInput(data);
+                {
+                    if (data.Length > 1 && !data.Contains("\x1b"))
+                        conPtyTerminal.WriteInput("\x1b[200~" + data + "\x1b[201~");
+                    else
+                        conPtyTerminal.WriteInput(data);
+                }
             }
             catch (Exception ex)
             {

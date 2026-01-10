@@ -104,7 +104,7 @@ namespace ClaudeVS
 
                     if (window.Content is ClaudeTerminalControl control)
                     {
-                        control.SendToClaude(message, false);
+                        control.SendToClaude("\x1b[200~" + message + "\x1b[201~", false);
                         control.FocusTerminal();
                     }
                 }

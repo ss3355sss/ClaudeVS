@@ -108,7 +108,7 @@ namespace ClaudeVS
                 ToolWindowPane window = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
                 if (window != null && window.Content is ClaudeTerminalControl control)
                 {
-                    control.SendToClaude(message, true);
+                    control.SendToClaude("\x1b[200~" + message + "\x1b[201~", true);
                 }
             }
             catch (Exception ex)
