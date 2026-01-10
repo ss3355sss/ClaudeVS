@@ -40,4 +40,4 @@ These can be configured in Options -> Environment -> Keyboard under the followin
 * ClaudeVS.AgentAction3
 * ClaudeVS.AgentAction4
 
-![ClaudeVS](https://github.com/user-attachments/assets/b472dd7b-3c2a-45cb-8ab6-2026d1a5f0a0)
+![ClaudeVS_3_2](https://github.com/user-attachments/assets/29f0e061-3cb9-44ee-913e-89dfdedbbd03)
