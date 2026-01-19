@@ -136,6 +136,8 @@ namespace ClaudeVS
 				var bgColor = GetThemeBackgroundColor();
 				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
 				TerminalControl.Background = new SolidColorBrush(bgColor);
+				this.Background = new SolidColorBrush(bgColor);
+				UpdateToolbarColors();
 
 				UpdateTerminalMaxWidth();
 
@@ -505,6 +507,8 @@ namespace ClaudeVS
 				var bgColor = GetThemeBackgroundColor();
 				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
 				TerminalControl.Background = new SolidColorBrush(bgColor);
+				this.Background = new SolidColorBrush(bgColor);
+				UpdateToolbarColors();
 
 				UpdateTerminalMaxWidth();
 
@@ -522,27 +526,27 @@ namespace ClaudeVS
 
 		private void UpdateTerminalMaxWidth()
 		{
-			// typically, it's +80 MaxWidth per font size but there's a trap at 16 where it's +3 compared to 14 and so requires + (3 * 80) instead of + (2 * 80)
+			// typically, it's +80 Width per font size but there's a trap at 16 where it's +3 compared to 14 and so requires + (3 * 80) instead of + (2 * 80)
 			if (currentFontSize == 8)
-				TerminalBorder.MaxWidth = 740.0;
+				TerminalBorder.Width = 740.0;
 			else if (currentFontSize == 9)
-				TerminalBorder.MaxWidth = 820.0;
+				TerminalBorder.Width = 820.0;
 			else if (currentFontSize == 10)
-				TerminalBorder.MaxWidth = 900.0;
+				TerminalBorder.Width = 900.0;
 			else if (currentFontSize == 11)
-				TerminalBorder.MaxWidth = 980.0;
+				TerminalBorder.Width = 980.0;
 			else if (currentFontSize == 12)
-				TerminalBorder.MaxWidth = 1060.0;
+				TerminalBorder.Width = 1060.0;
 			else if (currentFontSize == 14)
-				TerminalBorder.MaxWidth = 1220.0;
+				TerminalBorder.Width = 1220.0;
 			else if (currentFontSize == 16)
-				TerminalBorder.MaxWidth = 1460.0;
+				TerminalBorder.Width = 1460.0;
 			else if (currentFontSize == 18)
-				TerminalBorder.MaxWidth = 1620.0;
+				TerminalBorder.Width = 1620.0;
 			else if (currentFontSize == 20)
-				TerminalBorder.MaxWidth = 1780.0;
+				TerminalBorder.Width = 1780.0;
 			else if (currentFontSize == 24)
-				TerminalBorder.MaxWidth = 2100.0;
+				TerminalBorder.Width = 2100.0;
 		}
 
 		private void ThemeButton_Click(object sender, RoutedEventArgs e)
@@ -588,6 +592,8 @@ namespace ClaudeVS
 				var bgColor = GetThemeBackgroundColor();
 				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
 				TerminalControl.Background = new SolidColorBrush(bgColor);
+				this.Background = new SolidColorBrush(bgColor);
+				UpdateToolbarColors();
 
 				if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
 				{
@@ -617,6 +623,66 @@ namespace ClaudeVS
 			{
 				return Color.FromRgb(0x1e, 0x1e, 0x1e);
 			}
+		}
+
+		private void UpdateToolbarColors()
+		{
+			string effectiveTheme = currentTheme;
+			if (effectiveTheme == "System")
+			{
+				effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
+			}
+
+			SolidColorBrush toolbarBg, buttonBg, buttonFg, buttonBorder;
+
+			if (effectiveTheme == "Light")
+			{
+				toolbarBg = new SolidColorBrush(Color.FromRgb(0xE8, 0xE8, 0xE8));
+				buttonBg = new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF5));
+				buttonFg = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+				buttonBorder = new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF5));
+
+				MicButton.Style = (Style)FindResource("LightToggleButtonStyle");
+				ChangeCommandButton.Style = (Style)FindResource("LightButtonStyle");
+				RestartAgentButton.Style = (Style)FindResource("LightButtonStyle");
+				ThemeButton.Style = (Style)FindResource("LightButtonStyle");
+				FontSizeButton.Style = (Style)FindResource("LightButtonStyle");
+			}
+			else
+			{
+				toolbarBg = new SolidColorBrush(Color.FromRgb(0x0C, 0x0C, 0x0C));
+				buttonBg = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+				buttonFg = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4));
+				buttonBorder = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+
+				MicButton.Style = (Style)FindResource("DarkToggleButtonStyle");
+				ChangeCommandButton.Style = (Style)FindResource("DarkButtonStyle");
+				RestartAgentButton.Style = (Style)FindResource("DarkButtonStyle");
+				ThemeButton.Style = (Style)FindResource("DarkButtonStyle");
+				FontSizeButton.Style = (Style)FindResource("DarkButtonStyle");
+			}
+
+			ToolbarBorder.Background = toolbarBg;
+
+			MicButton.Background = buttonBg;
+			MicButton.Foreground = buttonFg;
+			MicButton.BorderBrush = buttonBorder;
+
+			ChangeCommandButton.Background = buttonBg;
+			ChangeCommandButton.Foreground = buttonFg;
+			ChangeCommandButton.BorderBrush = buttonBorder;
+
+			RestartAgentButton.Background = buttonBg;
+			RestartAgentButton.Foreground = buttonFg;
+			RestartAgentButton.BorderBrush = buttonBorder;
+
+			ThemeButton.Background = buttonBg;
+			ThemeButton.Foreground = buttonFg;
+			ThemeButton.BorderBrush = buttonBorder;
+
+			FontSizeButton.Background = buttonBg;
+			FontSizeButton.Foreground = buttonFg;
+			FontSizeButton.BorderBrush = buttonBorder;
 		}
 
 		private TerminalTheme GetTerminalTheme()
