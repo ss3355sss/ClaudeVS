@@ -239,11 +239,12 @@
             </StackPanel>
         </Border>
 
-        <terminal:TerminalControl x:Name="TerminalControl"
-                                  Grid.Row="1"
-                                  Background="#1e1e1e"
-                                  Foreground="#d4d4d4"
-                                  IsHitTestVisible="True"
-                                  Focusable="True"/>
+        <Border x:Name="TerminalBorder" Grid.Row="1">
+            <terminal:TerminalControl x:Name="TerminalControl"
+                                      Background="#1e1e1e"
+                                      Foreground="#d4d4d4"
+                                      IsHitTestVisible="True"
+                                      Focusable="True"/>
+        </Border>
     </Grid>
 </UserControl>
