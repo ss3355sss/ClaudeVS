@@ -13,6 +13,8 @@ namespace ClaudeVS
         private const string DefaultCommand = "claude";
         private const string FontSizeKey = "FontSize";
         private const short DefaultFontSize = 10;
+        private const string ThemeKey = "Theme";
+        private const string DefaultTheme = "System";
 
         public static string GetLastCommand()
         {
@@ -109,6 +111,55 @@ namespace ClaudeVS
             catch (Exception ex)
             {
                 Debug.WriteLine($"Exception in SaveFontSize: {ex}");
+            }
+        }
+
+        public static string GetTheme()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var settingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(CollectionPath))
+                {
+                    return DefaultTheme;
+                }
+
+                if (!userSettingsStore.PropertyExists(CollectionPath, ThemeKey))
+                {
+                    return DefaultTheme;
+                }
+
+                string theme = userSettingsStore.GetString(CollectionPath, ThemeKey);
+                return string.IsNullOrWhiteSpace(theme) ? DefaultTheme : theme;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in GetTheme: {ex}");
+                return DefaultTheme;
+            }
+        }
+
+        public static void SaveTheme(string theme)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var settingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(CollectionPath))
+                {
+                    userSettingsStore.CreateCollection(CollectionPath);
+                }
+
+                userSettingsStore.SetString(CollectionPath, ThemeKey, theme);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in SaveTheme: {ex}");
             }
         }
     }

@@ -33,6 +33,7 @@ namespace ClaudeVS
         private bool needsResizeAfterOutput = false;
         private string currentSolutionPath = null;
         private short currentFontSize = 10;
+        private string currentTheme = "System";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClaudeTerminalControl"/> class.
@@ -53,6 +54,7 @@ namespace ClaudeVS
             {
                 currentCommand = SettingsManager.GetLastCommand();
                 currentFontSize = SettingsManager.GetFontSize();
+                currentTheme = SettingsManager.GetTheme();
 
                 // If terminal already exists and is running, don't reinitialize
                 if (claudeTerminal?.Terminal != null)
@@ -126,27 +128,18 @@ namespace ClaudeVS
 
                 claudeTerminal?.SetTerminalInstances(conPtyTerminal, terminalConnection);
 
-                var theme = new TerminalTheme
-                {
-                    DefaultBackground = 0xFF1e1e1e,
-                    DefaultForeground = 0xFFd4d4d4,
-                    DefaultSelectionBackground = 0xFF264F78,
-                    CursorStyle = CursorStyle.BlinkingBar,
-                    ColorTable = new uint[]
-                    {
-                        0xFF0C0C0C, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
-                        0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFFCCCCCC,
-                        0xFF767676, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
-                        0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFFF2F2F2
-                    }
-                };
-                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, Colors.Transparent);
-
                 terminalConnection.WaitForConnectionReady();
 
                 TerminalControl.Connection = terminalConnection;
 
+                var theme = GetTerminalTheme();
+                var bgColor = GetThemeBackgroundColor();
+                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+                TerminalControl.Background = new SolidColorBrush(bgColor);
+
                 terminalConnection.Start();
+
+                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
 
                 needsResizeAfterOutput = true;
             }
@@ -510,21 +503,10 @@ namespace ClaudeVS
         {
             try
             {
-                var theme = new TerminalTheme
-                {
-                    DefaultBackground = 0xFF1e1e1e,
-                    DefaultForeground = 0xFFd4d4d4,
-                    DefaultSelectionBackground = 0xFF264F78,
-                    CursorStyle = CursorStyle.BlinkingBar,
-                    ColorTable = new uint[]
-                    {
-                        0xFF0C0C0C, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
-                        0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFFCCCCCC,
-                        0xFF767676, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
-                        0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFFF2F2F2
-                    }
-                };
-                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, Colors.Transparent);
+                var theme = GetTerminalTheme();
+                var bgColor = GetThemeBackgroundColor();
+                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+                TerminalControl.Background = new SolidColorBrush(bgColor);
 
                 if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
                 {
@@ -536,6 +518,147 @@ namespace ClaudeVS
             {
                 Debug.WriteLine($"Exception in ApplyFontSize: {ex}");
             }
+        }
+
+        private void ThemeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new ThemeDialog(currentTheme);
+                dialog.Owner = Application.Current?.MainWindow;
+                if (dialog.ShowDialog() == true)
+                {
+                    string newTheme = dialog.SelectedTheme;
+                    if (newTheme != currentTheme)
+                    {
+                        currentTheme = newTheme;
+                        SettingsManager.SaveTheme(currentTheme);
+                        needsResizeAfterOutput = true;
+                        string projectDir = GetActiveProjectDirectory();
+                        if (!string.IsNullOrEmpty(projectDir))
+                        {
+                            currentSolutionPath = projectDir;
+                            RestartClaudeWithWorkingDirectory(projectDir);
+                        }
+                        else
+                        {
+                            currentSolutionPath = null;
+                            StopClaude();
+                            InitializeConPtyTerminal();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in ThemeButton_Click: {ex}");
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            try
+            {
+                var theme = GetTerminalTheme();
+                var bgColor = GetThemeBackgroundColor();
+                TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+                TerminalControl.Background = new SolidColorBrush(bgColor);
+
+                if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+                {
+                    var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+                    TerminalControl.TriggerResize(size);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in ApplyTheme: {ex}");
+            }
+        }
+
+        private Color GetThemeBackgroundColor()
+        {
+            string effectiveTheme = currentTheme;
+            if (effectiveTheme == "System")
+            {
+                effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
+            }
+
+            if (effectiveTheme == "Light")
+            {
+                return Color.FromRgb(0xFF, 0xFF, 0xFF);
+            }
+            else
+            {
+                return Color.FromRgb(0x1e, 0x1e, 0x1e);
+            }
+        }
+
+        private TerminalTheme GetTerminalTheme()
+        {
+            string effectiveTheme = currentTheme;
+            if (effectiveTheme == "System")
+            {
+                effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
+            }
+
+            if (effectiveTheme == "Light")
+            {
+                return new TerminalTheme
+                {
+                    DefaultBackground = 0xFFFFFFFF,
+                    DefaultForeground = 0xFF000000,
+                    DefaultSelectionBackground = 0xFF0078D7,
+                    CursorStyle = CursorStyle.BlinkingBar,
+                    ColorTable = new uint[]
+                    {
+                        0xFFFFFFFF, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
+                        0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFF000000,
+                        0xFFFFFFFF, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
+                        0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFF000000
+                    }
+                };
+            }
+            else
+            {
+                return new TerminalTheme
+                {
+                    DefaultBackground = 0xFF1e1e1e,
+                    DefaultForeground = 0xFFd4d4d4,
+                    DefaultSelectionBackground = 0xFF264F78,
+                    CursorStyle = CursorStyle.BlinkingBar,
+                    ColorTable = new uint[]
+                    {
+                        0xFF1e1e1e, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
+                        0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFFCCCCCC,
+                        0xFF1e1e1e, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
+                        0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFFF2F2F2
+                    }
+                };
+            }
+        }
+
+        private bool IsSystemDarkMode()
+        {
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    if (key != null)
+                    {
+                        var value = key.GetValue("AppsUseLightTheme");
+                        if (value is int intValue)
+                        {
+                            return intValue == 0;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in IsSystemDarkMode: {ex}");
+            }
+            return true;
         }
 
         private void MicButton_Checked(object sender, RoutedEventArgs e)
