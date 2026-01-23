@@ -34,6 +34,7 @@ namespace ClaudeVS
 		private string currentSolutionPath = null;
 		private short currentFontSize = 10;
 		private string currentTheme = "System";
+		private DispatcherTimer refreshTimer;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ClaudeTerminalControl"/> class.
@@ -183,6 +184,9 @@ namespace ClaudeVS
 					uint rows = (uint)Math.Max(1, TerminalControl.ActualHeight / charHeight);
 
 					terminalConnection.Resize(rows, columns);
+
+					var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+					TerminalControl.TriggerResize(size);
 				}
 			}
 			catch (Exception ex)
@@ -254,6 +258,8 @@ namespace ClaudeVS
 		{
 			try
 			{
+				refreshTimer?.Stop();
+
 				TerminalControl.Connection = null;
 
 				var terminal = claudeTerminal?.Terminal;
@@ -408,12 +414,42 @@ namespace ClaudeVS
 					try
 					{
 						ApplyFontSize();
+						StartRefreshTimer();
 					}
 					catch (Exception ex)
 					{
 						Debug.WriteLine($"Exception in ConPtyTerminal_OutputReceived resize handler: {ex}");
 					}
 				}), System.Windows.Threading.DispatcherPriority.Render);
+			}
+		}
+
+		private void StartRefreshTimer()
+		{
+			if (refreshTimer == null)
+			{
+				refreshTimer = new DispatcherTimer
+				{
+					Interval = TimeSpan.FromMilliseconds(500)
+				};
+				refreshTimer.Tick += RefreshTimer_Tick;
+			}
+			refreshTimer.Start();
+		}
+
+		private void RefreshTimer_Tick(object sender, EventArgs e)
+		{
+			try
+			{
+				if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+				{
+					var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+					TerminalControl.TriggerResize(size);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in RefreshTimer_Tick: {ex}");
 			}
 		}
 
