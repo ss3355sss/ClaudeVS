@@ -30,7 +30,37 @@ namespace ClaudeVS
 		[return: MarshalAs(UnmanagedType.I1)]
 		private static extern bool TerminalIsSelectionActive(IntPtr terminal);
 
+		[DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
+		private static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
+
+		[DllImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool GetCursorPos(out POINT lpPoint);
+
+		[DllImport("user32.dll", CharSet = CharSet.Auto)]
+		private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+		[DllImport("user32.dll")]
+		private static extern short GetAsyncKeyState(int vKey);
+
+		private const int VK_LBUTTON = 0x01;
+		private const uint WM_MOUSEWHEEL = 0x020A;
+		private const int WHEEL_DELTA = 120;
+		private const int MK_LBUTTON = 0x0001;
+
+		[StructLayout(LayoutKind.Sequential)]
+		private struct POINT
+		{
+			public int X;
+			public int Y;
+		}
+
 		private IntPtr terminalHandle = IntPtr.Zero;
+		private IntPtr terminalHwnd = IntPtr.Zero;
+		private DispatcherTimer selectionScrollTimer;
+		private object termContainerInstance = null;
+		private ScrollBar terminalScrollbar = null;
+		private MethodInfo userScrollMethod = null;
 
 		private ClaudeTerminal claudeTerminal;
 		private DTE2 dte;
@@ -269,6 +299,7 @@ namespace ClaudeVS
 			try
 			{
 				refreshTimer?.Stop();
+				selectionScrollTimer?.Stop();
 
 				TerminalControl.Connection = null;
 
@@ -452,12 +483,28 @@ namespace ClaudeVS
 					var termContainer = termContainerField.GetValue(TerminalControl);
 					if (termContainer != null)
 					{
+						termContainerInstance = termContainer;
+
 						var terminalField = termContainer.GetType().GetField("terminal", BindingFlags.NonPublic | BindingFlags.Instance);
 						if (terminalField != null)
 						{
 							terminalHandle = (IntPtr)terminalField.GetValue(termContainer);
 						}
+
+						var hwndField = termContainer.GetType().GetField("hwnd", BindingFlags.NonPublic | BindingFlags.Instance);
+						if (hwndField != null)
+						{
+							terminalHwnd = (IntPtr)hwndField.GetValue(termContainer);
+						}
+
+						userScrollMethod = termContainer.GetType().GetMethod("UserScroll", BindingFlags.NonPublic | BindingFlags.Instance);
 					}
+				}
+
+				var scrollbarField = TerminalControl.GetType().GetField("scrollbar", BindingFlags.NonPublic | BindingFlags.Instance);
+				if (scrollbarField != null)
+				{
+					terminalScrollbar = scrollbarField.GetValue(TerminalControl) as ScrollBar;
 				}
 			}
 			catch (Exception ex)
@@ -493,6 +540,91 @@ namespace ClaudeVS
 				refreshTimer.Tick += RefreshTimer_Tick;
 			}
 			refreshTimer.Start();
+
+			StartSelectionScrollTimer();
+		}
+
+		private void StartSelectionScrollTimer()
+		{
+			if (selectionScrollTimer == null)
+			{
+				selectionScrollTimer = new DispatcherTimer(DispatcherPriority.Input)
+				{
+					Interval = TimeSpan.FromMilliseconds(16)
+				};
+				selectionScrollTimer.Tick += SelectionScrollTimer_Tick;
+			}
+			selectionScrollTimer.Start();
+		}
+
+		private bool IsLeftMouseButtonDown()
+		{
+			return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		}
+
+		private bool wasMouseButtonDown = false;
+
+		private void SelectionScrollTimer_Tick(object sender, EventArgs e)
+		{
+			try
+			{
+				if (terminalHwnd == IntPtr.Zero)
+				{
+					return;
+				}
+
+				bool isMouseDown = IsLeftMouseButtonDown();
+
+				if (!isMouseDown)
+				{
+					wasMouseButtonDown = false;
+					return;
+				}
+
+				wasMouseButtonDown = true;
+
+				if (!GetCursorPos(out POINT cursorPos))
+				{
+					return;
+				}
+
+				var terminalPoint = TerminalControl.PointFromScreen(new Point(cursorPos.X, cursorPos.Y));
+				double edgeMargin = 20;
+				double terminalTop = edgeMargin;
+				double terminalBottom = TerminalControl.ActualHeight - edgeMargin;
+
+				bool isOutsideBounds = terminalPoint.Y < terminalTop || terminalPoint.Y > terminalBottom;
+				if (!isOutsideBounds)
+				{
+					return;
+				}
+
+				int wheelDelta = 0;
+
+				if (terminalPoint.Y < terminalTop)
+				{
+					double distance = terminalTop - terminalPoint.Y;
+					int scrollSpeed = Math.Max(1, Math.Min(3, (int)(distance / 50) + 1));
+					wheelDelta = (WHEEL_DELTA / 2) * scrollSpeed;
+				}
+				else if (terminalPoint.Y > terminalBottom)
+				{
+					double distance = terminalPoint.Y - terminalBottom;
+					int scrollSpeed = Math.Max(1, Math.Min(3, (int)(distance / 50) + 1));
+					wheelDelta = -(WHEEL_DELTA / 2) * scrollSpeed;
+				}
+
+				if (wheelDelta != 0)
+				{
+					int wParam = (wheelDelta << 16) | MK_LBUTTON;
+					int lParam = (cursorPos.Y << 16) | (cursorPos.X & 0xFFFF);
+					SendMessage(terminalHwnd, WM_MOUSEWHEEL, (IntPtr)wParam, (IntPtr)lParam);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in SelectionScrollTimer_Tick: {ex}");
+			}
 		}
 
 		private void RefreshTimer_Tick(object sender, EventArgs e)
