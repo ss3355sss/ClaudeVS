@@ -3,6 +3,7 @@ namespace ClaudeVS
 	using System;
 	using System.Diagnostics;
 	using System.IO;
+	using System.Reflection;
 	using System.Runtime.InteropServices;
 	using System.Windows.Threading;
 	using System.Windows;
@@ -25,6 +26,12 @@ namespace ClaudeVS
 		[DllImport("user32.dll")]
 		private static extern IntPtr SetFocus(IntPtr hWnd);
 
+		[DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
+		[return: MarshalAs(UnmanagedType.I1)]
+		private static extern bool TerminalIsSelectionActive(IntPtr terminal);
+
+		private IntPtr terminalHandle = IntPtr.Zero;
+
 		private ClaudeTerminal claudeTerminal;
 		private DTE2 dte;
 		private SolutionEvents solutionEvents;
@@ -35,6 +42,7 @@ namespace ClaudeVS
 		private short currentFontSize = 10;
 		private string currentTheme = "System";
 		private DispatcherTimer refreshTimer;
+		private DateTime lastOutputTime = DateTime.MinValue;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ClaudeTerminalControl"/> class.
@@ -132,6 +140,8 @@ namespace ClaudeVS
 				terminalConnection.WaitForConnectionReady();
 
 				TerminalControl.Connection = terminalConnection;
+
+				ExtractTerminalHandle();
 
 				var theme = GetTerminalTheme();
 				var bgColor = GetThemeBackgroundColor();
@@ -406,6 +416,14 @@ namespace ClaudeVS
 
 		private void ConPtyTerminal_OutputReceived(object sender, string e)
 		{
+			lastOutputTime = DateTime.UtcNow;
+
+			var connection = claudeTerminal?.TerminalConnection;
+			if (connection != null)
+			{
+				connection.IsPaused = IsTerminalSelectionActive();
+			}
+
 			if (needsResizeAfterOutput)
 			{
 				needsResizeAfterOutput = false;
@@ -422,6 +440,46 @@ namespace ClaudeVS
 					}
 				}), System.Windows.Threading.DispatcherPriority.Render);
 			}
+		}
+
+		private void ExtractTerminalHandle()
+		{
+			try
+			{
+				var termContainerField = TerminalControl.GetType().GetField("termContainer", BindingFlags.NonPublic | BindingFlags.Instance);
+				if (termContainerField != null)
+				{
+					var termContainer = termContainerField.GetValue(TerminalControl);
+					if (termContainer != null)
+					{
+						var terminalField = termContainer.GetType().GetField("terminal", BindingFlags.NonPublic | BindingFlags.Instance);
+						if (terminalField != null)
+						{
+							terminalHandle = (IntPtr)terminalField.GetValue(termContainer);
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in ExtractTerminalHandle: {ex}");
+			}
+		}
+
+		private bool IsTerminalSelectionActive()
+		{
+			try
+			{
+				if (terminalHandle != IntPtr.Zero)
+				{
+					return TerminalIsSelectionActive(terminalHandle);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in IsTerminalSelectionActive: {ex}");
+			}
+			return false;
 		}
 
 		private void StartRefreshTimer()
@@ -441,7 +499,17 @@ namespace ClaudeVS
 		{
 			try
 			{
-				if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+				bool isSelecting = IsTerminalSelectionActive();
+
+				var connection = claudeTerminal?.TerminalConnection;
+				if (connection != null)
+				{
+					connection.IsPaused = isSelecting;
+				}
+
+				if (!isSelecting &&
+					(DateTime.UtcNow - lastOutputTime).TotalMilliseconds < 1000 &&
+					TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
 				{
 					var theme = GetTerminalTheme();
 					var bgColor = GetThemeBackgroundColor();

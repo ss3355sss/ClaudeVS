@@ -13,6 +13,40 @@ namespace ClaudeVS
     {
         private readonly ConPtyTerminal conPtyTerminal;
         private readonly ManualResetEventSlim connectionReadyEvent = new ManualResetEventSlim(false);
+        private readonly StringBuilder outputBuffer = new StringBuilder();
+        private readonly object bufferLock = new object();
+        private volatile bool isPaused = false;
+
+        public bool IsPaused
+        {
+            get => isPaused;
+            set
+            {
+                if (isPaused && !value)
+                {
+                    isPaused = value;
+                    FlushBuffer();
+                }
+                else
+                {
+                    isPaused = value;
+                }
+            }
+        }
+
+        private void FlushBuffer()
+        {
+            string bufferedOutput;
+            lock (bufferLock)
+            {
+                bufferedOutput = outputBuffer.ToString();
+                outputBuffer.Clear();
+            }
+            if (!string.IsNullOrEmpty(bufferedOutput) && terminalOutputEvent != null)
+            {
+                terminalOutputEvent.Invoke(this, new TerminalOutputEventArgs(bufferedOutput));
+            }
+        }
 
         public ConPtyTerminalConnection(ConPtyTerminal terminal)
         {
@@ -25,7 +59,14 @@ namespace ClaudeVS
 
             conPtyTerminal.OutputReceived += (sender, output) =>
             {
-                if (terminalOutputEvent != null)
+                if (isPaused)
+                {
+                    lock (bufferLock)
+                    {
+                        outputBuffer.Append(output);
+                    }
+                }
+                else if (terminalOutputEvent != null)
                 {
                     terminalOutputEvent.Invoke(this, new TerminalOutputEventArgs(output));
                 }
