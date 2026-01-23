@@ -443,8 +443,9 @@ namespace ClaudeVS
 			{
 				if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
 				{
-					var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
-					TerminalControl.TriggerResize(size);
+					var theme = GetTerminalTheme();
+					var bgColor = GetThemeBackgroundColor();
+					TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
 				}
 			}
 			catch (Exception ex)
