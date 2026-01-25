@@ -3,6 +3,7 @@ namespace ClaudeVS
 	using System;
 	using System.Diagnostics;
 	using System.IO;
+	using System.Reflection;
 	using System.Runtime.InteropServices;
 	using System.Windows.Threading;
 	using System.Windows;
@@ -10,9 +11,11 @@ namespace ClaudeVS
 	using System.Windows.Input;
 	using System.Windows.Interop;
 	using System.Windows.Media;
+	using System.Windows.Media.Media3D;
 	using System.Windows.Controls.Primitives;
 	using EnvDTE;
 	using EnvDTE80;
+	using Microsoft.Terminal.Wpf;
 	using Microsoft.VisualStudio.Shell;
 
 	/// <summary>
@@ -23,14 +26,53 @@ namespace ClaudeVS
 		[DllImport("user32.dll")]
 		private static extern IntPtr SetFocus(IntPtr hWnd);
 
+		[DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
+		[return: MarshalAs(UnmanagedType.I1)]
+		private static extern bool TerminalIsSelectionActive(IntPtr terminal);
+
+		[DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
+		private static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
+
+		[DllImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool GetCursorPos(out POINT lpPoint);
+
+		[DllImport("user32.dll", CharSet = CharSet.Auto)]
+		private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+		[DllImport("user32.dll")]
+		private static extern short GetAsyncKeyState(int vKey);
+
+		private const int VK_LBUTTON = 0x01;
+		private const uint WM_MOUSEWHEEL = 0x020A;
+		private const int WHEEL_DELTA = 120;
+		private const int MK_LBUTTON = 0x0001;
+
+		[StructLayout(LayoutKind.Sequential)]
+		private struct POINT
+		{
+			public int X;
+			public int Y;
+		}
+
+		private IntPtr terminalHandle = IntPtr.Zero;
+		private IntPtr terminalHwnd = IntPtr.Zero;
+		private DispatcherTimer selectionScrollTimer;
+		private object termContainerInstance = null;
+		private ScrollBar terminalScrollbar = null;
+		private MethodInfo userScrollMethod = null;
+
 		private ClaudeTerminal claudeTerminal;
 		private DTE2 dte;
 		private SolutionEvents solutionEvents;
 		private bool isInitialized;
 		private string currentCommand = "claude";
+		private bool needsResizeAfterOutput = false;
 		private string currentSolutionPath = null;
 		private short currentFontSize = 10;
 		private string currentTheme = "System";
+		private DispatcherTimer refreshTimer;
+		private DateTime lastOutputTime = DateTime.MinValue;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ClaudeTerminalControl"/> class.
@@ -53,9 +95,17 @@ namespace ClaudeVS
 				currentFontSize = SettingsManager.GetFontSize();
 				currentTheme = SettingsManager.GetTheme();
 
-				if (ConsoleHost.IsRunning)
+				// If terminal already exists and is running, don't reinitialize
+				if (claudeTerminal?.Terminal != null)
 				{
-					ConsoleHost.FocusConsole();
+					// Refresh the terminal screen
+					if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+					{
+						var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+						TerminalControl.TriggerResize(size);
+					}
+
+					TerminalControl.Focus();
 					return;
 				}
 
@@ -76,13 +126,13 @@ namespace ClaudeVS
 					if (!string.IsNullOrEmpty(projectDir))
 					{
 						currentSolutionPath = projectDir;
-						InitializeConsoleHost();
+						InitializeConPtyTerminal();
 					}
 
 					isInitialized = true;
 				}
 
-				ConsoleHost.FocusConsole();
+				TerminalControl.Focus();
 			}
 			catch (Exception ex)
 			{
@@ -90,39 +140,99 @@ namespace ClaudeVS
 			}
 		}
 
-		private void InitializeConsoleHost()
+		private void InitializeConPtyTerminal()
 		{
 			try
 			{
+				var conPtyTerminal = new ConPtyTerminal(rows: 30, columns: 120);
+				conPtyTerminal.Command = currentCommand;
+
 				string workingDir = GetActiveProjectDirectory();
 				if (string.IsNullOrEmpty(workingDir))
 				{
 					workingDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
 				}
 
-				bool isDarkTheme = GetEffectiveTheme() == "Dark";
-				ConsoleHost.Configure(workingDir, currentCommand, currentFontSize, isDarkTheme);
-				ConsoleHost.Start();
-				ConsoleHost.ProcessExited += ConsoleHost_ProcessExited;
+				bool initialized = conPtyTerminal.Initialize(workingDir);
 
-				UpdateToolbarColors();
+				if (!initialized)
+				{
+					conPtyTerminal?.Dispose();
+					return;
+				}
+
+				var terminalConnection = new ConPtyTerminalConnection(conPtyTerminal);
+
+				conPtyTerminal.OutputReceived += ConPtyTerminal_OutputReceived;
+
+				claudeTerminal?.SetTerminalInstances(conPtyTerminal, terminalConnection);
+
+				terminalConnection.WaitForConnectionReady();
+
+				TerminalControl.Connection = terminalConnection;
+
+				ExtractTerminalHandle();
+
+				var theme = GetTerminalTheme();
 				var bgColor = GetThemeBackgroundColor();
+				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+				TerminalControl.Background = new SolidColorBrush(bgColor);
 				this.Background = new SolidColorBrush(bgColor);
-				TerminalBorder.Background = new SolidColorBrush(bgColor);
+				UpdateToolbarColors();
+
+				UpdateTerminalMaxWidth();
+
+				terminalConnection.Start();
+
+				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+
+				needsResizeAfterOutput = true;
 			}
 			catch (Exception ex)
 			{
-				Debug.WriteLine($"Exception in InitializeTerminal: {ex}");
+				Debug.WriteLine($"Exception in InitializeConPtyTerminal: {ex}");
 			}
 		}
 
-		private void ConsoleHost_ProcessExited(object sender, EventArgs e)
+		private void ReconnectTerminal()
 		{
-			Debug.WriteLine("Terminal process exited");
+			try
+			{
+				if (claudeTerminal?.TerminalConnection != null)
+				{
+					TerminalControl.Connection = claudeTerminal.TerminalConnection;
+					TerminalControl.InvalidateVisual();
+					TerminalControl.UpdateLayout();
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in ReconnectTerminal: {ex}");
+			}
 		}
 
 		private void ClaudeTerminalControl_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
 		{
+			try
+			{
+				var terminalConnection = claudeTerminal?.TerminalConnection;
+				if (terminalConnection != null && TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+				{
+					double charHeight = currentFontSize * 1.2;
+
+					uint columns = 120;
+					uint rows = (uint)Math.Max(1, TerminalControl.ActualHeight / charHeight);
+
+					terminalConnection.Resize(rows, columns);
+
+					var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+					TerminalControl.TriggerResize(size);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in ClaudeTerminalControl_SizeChanged: {ex}");
+			}
 		}
 
 		private void ClaudeTerminalControl_Unloaded(object sender, System.Windows.RoutedEventArgs e)
@@ -175,9 +285,8 @@ namespace ClaudeVS
 		{
 			try
 			{
-				bool isDarkTheme = GetEffectiveTheme() == "Dark";
-				ConsoleHost.Configure(workingDirectory, currentCommand, currentFontSize, isDarkTheme);
-				ConsoleHost.Restart(workingDirectory, currentCommand);
+				StopClaude();
+				InitializeConPtyTerminal();
 			}
 			catch (Exception ex)
 			{
@@ -189,6 +298,18 @@ namespace ClaudeVS
 		{
 			try
 			{
+				refreshTimer?.Stop();
+				selectionScrollTimer?.Stop();
+
+				TerminalControl.Connection = null;
+
+				var terminal = claudeTerminal?.Terminal;
+				if (terminal != null)
+				{
+					terminal.Dispose();
+				}
+
+				claudeTerminal?.SetTerminalInstances(null, null);
 				isInitialized = false;
 			}
 			catch (Exception ex)
@@ -246,13 +367,9 @@ namespace ClaudeVS
 		{
 			try
 			{
-				if (ConsoleHost != null && ConsoleHost.IsRunning)
-				{
-					if (bEnter)
-						ConsoleHost.SendInputWithEnter(message);
-					else
-						ConsoleHost.SendInput(message);
-				}
+				var terminal = claudeTerminal?.Terminal;
+				if (terminal != null)
+					terminal.SendToClaude(message, bEnter);
 			}
 			catch (Exception ex)
 			{
@@ -280,7 +397,13 @@ namespace ClaudeVS
 					focusTimer.Stop();
 					try
 					{
-						ConsoleHost?.FocusConsole();
+						var hwndHost = FindVisualChild<HwndHost>(TerminalControl);
+						if (hwndHost != null && hwndHost.Handle != IntPtr.Zero)
+						{
+							SetFocus(hwndHost.Handle);
+						}
+						TerminalControl.Focus();
+						Keyboard.Focus(TerminalControl);
 					}
 					catch (Exception ex)
 					{
@@ -293,6 +416,20 @@ namespace ClaudeVS
 			{
 				Debug.WriteLine($"Exception in FocusTerminal: {ex}");
 			}
+		}
+
+		private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+		{
+			for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+			{
+				var child = VisualTreeHelper.GetChild(parent, i);
+				if (child is T result)
+					return result;
+				var descendant = FindVisualChild<T>(child);
+				if (descendant != null)
+					return descendant;
+			}
+			return null;
 		}
 
 		private void ClaudeTerminalControl_GotFocus(object sender, RoutedEventArgs e)
@@ -308,6 +445,215 @@ namespace ClaudeVS
 		{
 		}
 
+		private void ConPtyTerminal_OutputReceived(object sender, string e)
+		{
+			lastOutputTime = DateTime.UtcNow;
+
+			var connection = claudeTerminal?.TerminalConnection;
+			if (connection != null)
+			{
+				connection.IsPaused = IsTerminalSelectionActive();
+			}
+
+			if (needsResizeAfterOutput)
+			{
+				needsResizeAfterOutput = false;
+				Dispatcher.BeginInvoke(new Action(() =>
+				{
+					try
+					{
+						ApplyFontSize();
+						StartRefreshTimer();
+					}
+					catch (Exception ex)
+					{
+						Debug.WriteLine($"Exception in ConPtyTerminal_OutputReceived resize handler: {ex}");
+					}
+				}), System.Windows.Threading.DispatcherPriority.Render);
+			}
+		}
+
+		private void ExtractTerminalHandle()
+		{
+			try
+			{
+				var termContainerField = TerminalControl.GetType().GetField("termContainer", BindingFlags.NonPublic | BindingFlags.Instance);
+				if (termContainerField != null)
+				{
+					var termContainer = termContainerField.GetValue(TerminalControl);
+					if (termContainer != null)
+					{
+						termContainerInstance = termContainer;
+
+						var terminalField = termContainer.GetType().GetField("terminal", BindingFlags.NonPublic | BindingFlags.Instance);
+						if (terminalField != null)
+						{
+							terminalHandle = (IntPtr)terminalField.GetValue(termContainer);
+						}
+
+						var hwndField = termContainer.GetType().GetField("hwnd", BindingFlags.NonPublic | BindingFlags.Instance);
+						if (hwndField != null)
+						{
+							terminalHwnd = (IntPtr)hwndField.GetValue(termContainer);
+						}
+
+						userScrollMethod = termContainer.GetType().GetMethod("UserScroll", BindingFlags.NonPublic | BindingFlags.Instance);
+					}
+				}
+
+				var scrollbarField = TerminalControl.GetType().GetField("scrollbar", BindingFlags.NonPublic | BindingFlags.Instance);
+				if (scrollbarField != null)
+				{
+					terminalScrollbar = scrollbarField.GetValue(TerminalControl) as ScrollBar;
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in ExtractTerminalHandle: {ex}");
+			}
+		}
+
+		private bool IsTerminalSelectionActive()
+		{
+			try
+			{
+				if (terminalHandle != IntPtr.Zero)
+				{
+					return TerminalIsSelectionActive(terminalHandle);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in IsTerminalSelectionActive: {ex}");
+			}
+			return false;
+		}
+
+		private void StartRefreshTimer()
+		{
+			if (refreshTimer == null)
+			{
+				refreshTimer = new DispatcherTimer
+				{
+					Interval = TimeSpan.FromMilliseconds(500)
+				};
+				refreshTimer.Tick += RefreshTimer_Tick;
+			}
+			refreshTimer.Start();
+
+			StartSelectionScrollTimer();
+		}
+
+		private void StartSelectionScrollTimer()
+		{
+			if (selectionScrollTimer == null)
+			{
+				selectionScrollTimer = new DispatcherTimer(DispatcherPriority.Input)
+				{
+					Interval = TimeSpan.FromMilliseconds(16)
+				};
+				selectionScrollTimer.Tick += SelectionScrollTimer_Tick;
+			}
+			selectionScrollTimer.Start();
+		}
+
+		private bool IsLeftMouseButtonDown()
+		{
+			return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		}
+
+		private bool wasMouseButtonDown = false;
+
+		private void SelectionScrollTimer_Tick(object sender, EventArgs e)
+		{
+			try
+			{
+				if (terminalHwnd == IntPtr.Zero)
+				{
+					return;
+				}
+
+				bool isMouseDown = IsLeftMouseButtonDown();
+
+				if (!isMouseDown)
+				{
+					wasMouseButtonDown = false;
+					return;
+				}
+
+				wasMouseButtonDown = true;
+
+				if (!GetCursorPos(out POINT cursorPos))
+				{
+					return;
+				}
+
+				var terminalPoint = TerminalControl.PointFromScreen(new Point(cursorPos.X, cursorPos.Y));
+				double edgeMargin = 20;
+				double terminalTop = edgeMargin;
+				double terminalBottom = TerminalControl.ActualHeight - edgeMargin;
+
+				bool isOutsideBounds = terminalPoint.Y < terminalTop || terminalPoint.Y > terminalBottom;
+				if (!isOutsideBounds)
+				{
+					return;
+				}
+
+				int wheelDelta = 0;
+
+				if (terminalPoint.Y < terminalTop)
+				{
+					double distance = terminalTop - terminalPoint.Y;
+					int scrollSpeed = Math.Max(1, Math.Min(3, (int)(distance / 50) + 1));
+					wheelDelta = (WHEEL_DELTA / 2) * scrollSpeed;
+				}
+				else if (terminalPoint.Y > terminalBottom)
+				{
+					double distance = terminalPoint.Y - terminalBottom;
+					int scrollSpeed = Math.Max(1, Math.Min(3, (int)(distance / 50) + 1));
+					wheelDelta = -(WHEEL_DELTA / 2) * scrollSpeed;
+				}
+
+				if (wheelDelta != 0)
+				{
+					int wParam = (wheelDelta << 16) | MK_LBUTTON;
+					int lParam = (cursorPos.Y << 16) | (cursorPos.X & 0xFFFF);
+					SendMessage(terminalHwnd, WM_MOUSEWHEEL, (IntPtr)wParam, (IntPtr)lParam);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in SelectionScrollTimer_Tick: {ex}");
+			}
+		}
+
+		private void RefreshTimer_Tick(object sender, EventArgs e)
+		{
+			try
+			{
+				bool isSelecting = IsTerminalSelectionActive();
+
+				var connection = claudeTerminal?.TerminalConnection;
+				if (connection != null)
+				{
+					connection.IsPaused = isSelecting;
+				}
+
+				if (!isSelecting &&
+					(DateTime.UtcNow - lastOutputTime).TotalMilliseconds < 1000 &&
+					TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+				{
+					var theme = GetTerminalTheme();
+					var bgColor = GetThemeBackgroundColor();
+					TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in RefreshTimer_Tick: {ex}");
+			}
+		}
+
 		private void ChangeCommandButton_Click(object sender, RoutedEventArgs e)
 		{
 			try
@@ -321,6 +667,7 @@ namespace ClaudeVS
 					{
 						currentCommand = newCommand;
 						SettingsManager.SaveLastCommand(currentCommand);
+						needsResizeAfterOutput = true;
 						string projectDir = GetActiveProjectDirectory();
 						if (!string.IsNullOrEmpty(projectDir))
 						{
@@ -330,8 +677,8 @@ namespace ClaudeVS
 						else
 						{
 							currentSolutionPath = null;
-							string workingDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-							RestartClaudeWithWorkingDirectory(workingDir);
+							StopClaude();
+							InitializeConPtyTerminal();
 						}
 					}
 				}
@@ -346,6 +693,7 @@ namespace ClaudeVS
 		{
 			try
 			{
+				needsResizeAfterOutput = true;
 				string projectDir = GetActiveProjectDirectory();
 				if (!string.IsNullOrEmpty(projectDir))
 				{
@@ -355,8 +703,8 @@ namespace ClaudeVS
 				else
 				{
 					currentSolutionPath = null;
-					string workingDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-					RestartClaudeWithWorkingDirectory(workingDir);
+					StopClaude();
+					InitializeConPtyTerminal();
 				}
 			}
 			catch (Exception ex)
@@ -378,7 +726,7 @@ namespace ClaudeVS
 					{
 						currentFontSize = newFontSize;
 						SettingsManager.SaveFontSize(currentFontSize);
-						ConsoleHost.SetFontSize(currentFontSize);
+						ApplyFontSize();
 					}
 				}
 			}
@@ -386,6 +734,56 @@ namespace ClaudeVS
 			{
 				Debug.WriteLine($"Exception in FontSizeButton_Click: {ex}");
 			}
+		}
+
+		private void ApplyFontSize()
+		{
+			try
+			{
+				var theme = GetTerminalTheme();
+				var bgColor = GetThemeBackgroundColor();
+				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+				TerminalControl.Background = new SolidColorBrush(bgColor);
+				this.Background = new SolidColorBrush(bgColor);
+				UpdateToolbarColors();
+
+				UpdateTerminalMaxWidth();
+
+				if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+				{
+					var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+					TerminalControl.TriggerResize(size);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in ApplyFontSize: {ex}");
+			}
+		}
+
+		private void UpdateTerminalMaxWidth()
+		{
+			// typically, it's +80 Width per font size but there's a trap at 16 where it's +3 compared to 14 and so requires + (3 * 80) instead of + (2 * 80)
+			if (currentFontSize == 8)
+				TerminalBorder.Width = 740.0;
+			else if (currentFontSize == 9)
+				TerminalBorder.Width = 820.0;
+			else if (currentFontSize == 10)
+				TerminalBorder.Width = 900.0;
+			else if (currentFontSize == 11)
+				TerminalBorder.Width = 980.0;
+			else if (currentFontSize == 12)
+				TerminalBorder.Width = 1060.0;
+			else if (currentFontSize == 14)
+				TerminalBorder.Width = 1220.0;
+			else if (currentFontSize == 16)
+				TerminalBorder.Width = 1460.0;
+			else if (currentFontSize == 18)
+				TerminalBorder.Width = 1620.0;
+			else if (currentFontSize == 20)
+				TerminalBorder.Width = 1780.0;
+			else if (currentFontSize == 24)
+				TerminalBorder.Width = 2100.0;
 		}
 
 		private void ThemeButton_Click(object sender, RoutedEventArgs e)
@@ -401,14 +799,19 @@ namespace ClaudeVS
 					{
 						currentTheme = newTheme;
 						SettingsManager.SaveTheme(currentTheme);
-
-						UpdateToolbarColors();
-						var bgColor = GetThemeBackgroundColor();
-						this.Background = new SolidColorBrush(bgColor);
-						TerminalBorder.Background = new SolidColorBrush(bgColor);
-
-						bool isDark = GetEffectiveTheme() == "Dark";
-						ConsoleHost.SetTheme(isDark);
+						needsResizeAfterOutput = true;
+						string projectDir = GetActiveProjectDirectory();
+						if (!string.IsNullOrEmpty(projectDir))
+						{
+							currentSolutionPath = projectDir;
+							RestartClaudeWithWorkingDirectory(projectDir);
+						}
+						else
+						{
+							currentSolutionPath = null;
+							StopClaude();
+							InitializeConPtyTerminal();
+						}
 					}
 				}
 			}
@@ -418,19 +821,36 @@ namespace ClaudeVS
 			}
 		}
 
-		private string GetEffectiveTheme()
+		private void ApplyTheme()
+		{
+			try
+			{
+				var theme = GetTerminalTheme();
+				var bgColor = GetThemeBackgroundColor();
+				TerminalControl.SetTheme(theme, "Consolas", currentFontSize, bgColor);
+				TerminalControl.Background = new SolidColorBrush(bgColor);
+				this.Background = new SolidColorBrush(bgColor);
+				UpdateToolbarColors();
+
+				if (TerminalControl.ActualHeight > 0 && TerminalControl.ActualWidth > 0)
+				{
+					var size = new Size(TerminalControl.ActualWidth, TerminalControl.ActualHeight);
+					TerminalControl.TriggerResize(size);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in ApplyTheme: {ex}");
+			}
+		}
+
+		private Color GetThemeBackgroundColor()
 		{
 			string effectiveTheme = currentTheme;
 			if (effectiveTheme == "System")
 			{
 				effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
 			}
-			return effectiveTheme;
-		}
-
-		private Color GetThemeBackgroundColor()
-		{
-			string effectiveTheme = GetEffectiveTheme();
 
 			if (effectiveTheme == "Light")
 			{
@@ -444,7 +864,11 @@ namespace ClaudeVS
 
 		private void UpdateToolbarColors()
 		{
-			string effectiveTheme = GetEffectiveTheme();
+			string effectiveTheme = currentTheme;
+			if (effectiveTheme == "System")
+			{
+				effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
+			}
 
 			SolidColorBrush toolbarBg, buttonBg, buttonFg, buttonBorder;
 
@@ -496,6 +920,50 @@ namespace ClaudeVS
 			FontSizeButton.Background = buttonBg;
 			FontSizeButton.Foreground = buttonFg;
 			FontSizeButton.BorderBrush = buttonBorder;
+		}
+
+		private TerminalTheme GetTerminalTheme()
+		{
+			string effectiveTheme = currentTheme;
+			if (effectiveTheme == "System")
+			{
+				effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
+			}
+
+			if (effectiveTheme == "Light")
+			{
+				return new TerminalTheme
+				{
+					DefaultBackground = 0xFFFFFFFF,
+					DefaultForeground = 0xFF000000,
+					DefaultSelectionBackground = 0xFF0078D7,
+					CursorStyle = CursorStyle.BlinkingBar,
+					ColorTable = new uint[]
+					{
+						0xFFFFFFFF, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
+						0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFF000000,
+						0xFFFFFFFF, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
+						0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFF000000
+					}
+				};
+			}
+			else
+			{
+				return new TerminalTheme
+				{
+					DefaultBackground = 0xFF1e1e1e,
+					DefaultForeground = 0xFFd4d4d4,
+					DefaultSelectionBackground = 0xFF264F78,
+					CursorStyle = CursorStyle.BlinkingBar,
+					ColorTable = new uint[]
+					{
+						0xFF1e1e1e, 0xFFC50F1F, 0xFF13A10E, 0xFFC19C00,
+						0xFF0037DA, 0xFF881798, 0xFF3A96DD, 0xFFCCCCCC,
+						0xFF1e1e1e, 0xFFE74856, 0xFF16C60C, 0xFFF9F1A5,
+						0xFF3B78FF, 0xFFB4009E, 0xFF61D6D6, 0xFFF2F2F2
+					}
+				};
+			}
 		}
 
 		private bool IsSystemDarkMode()

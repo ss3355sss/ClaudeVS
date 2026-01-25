@@ -21,7 +21,11 @@ namespace ClaudeVS
     [Guid("f4c7b9e2-3a5d-6c8f-1b2e-4a9d7c5f3e8b")]
     public class ClaudeTerminal : ToolWindowPane, IOleCommandTarget, IVsWindowFrameNotify3
     {
-        private ClaudeTerminalControl terminalControl;
+        private ConPtyTerminal conPtyTerminal;
+        private ConPtyTerminalConnection terminalConnection;
+
+        public ConPtyTerminal Terminal => conPtyTerminal;
+        public ConPtyTerminalConnection TerminalConnection => terminalConnection;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClaudeTerminal"/> class.
@@ -30,16 +34,34 @@ namespace ClaudeVS
         {
             this.Caption = "ClaudeVS";
 
-            terminalControl = new ClaudeTerminalControl(this);
-            this.Content = terminalControl;
+            // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
+            // we are not calling Dispose on this object as this is lifetime managed by the
+            // shell so the copy instance will be reused.
+
+            if (conPtyTerminal != null)
+            {
+                conPtyTerminal?.Dispose();
+                conPtyTerminal = null;
+                terminalConnection = null;
+            }
+
+            this.Content = new ClaudeTerminalControl(this);
             this.ToolBar = null;
+        }
+
+        public void SetTerminalInstances(ConPtyTerminal terminal, ConPtyTerminalConnection connection)
+        {
+            conPtyTerminal = terminal;
+            terminalConnection = connection;
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                terminalControl = null;
+                conPtyTerminal?.Dispose();
+                terminalConnection = null;
+                conPtyTerminal = null;
             }
             base.Dispose(disposing);
         }
@@ -51,7 +73,8 @@ namespace ClaudeVS
                 fShow == (int)__FRAMESHOW.FRAMESHOW_WinRestored ||
                 fShow == 12)
             {
-                terminalControl?.FocusTerminal();
+                var control = this.Content as ClaudeTerminalControl;
+                control?.FocusTerminal();
             }
             return VSConstants.S_OK;
         }
@@ -92,7 +115,10 @@ namespace ClaudeVS
             {
                 if ((VSConstants.VSStd97CmdID)nCmdID == VSConstants.VSStd97CmdID.PaneActivateDocWindow)
                 {
-                    terminalControl?.SendToClaude("\x1b", false);
+                    if (conPtyTerminal != null && conPtyTerminal.IsRunning)
+                    {
+						conPtyTerminal.WriteInput("\x1b");
+                    }
 					return (int)Microsoft.VisualStudio.VSConstants.S_OK;
                 }
             }
