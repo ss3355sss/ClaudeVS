@@ -217,9 +217,10 @@ namespace ClaudeVS
 			}
 
 			var terminalWindow = window as ClaudeTerminal;
-			if (terminalWindow?.Terminal != null && terminalWindow.Terminal.IsRunning)
+			var terminalControl = terminalWindow?.Content as ClaudeTerminalControl;
+			if (terminalControl != null)
 			{
-				terminalWindow.Terminal.SendToClaude(text, true);
+				terminalControl.SendToClaude(text, true);
 				Debug.WriteLine($"SpeechCommand: Sent text to terminal: {text}");
 			}
 			else

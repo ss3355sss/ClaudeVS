@@ -66,8 +66,7 @@
     <Compile Include="ThemeDialog.xaml.cs">
       <DependentUpon>ThemeDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ConPtyTerminal.cs" />
-    <Compile Include="ConPtyTerminalConnection.cs" />
+    <Compile Include="EmbeddedConsoleHost.cs" />
     <Compile Include="SettingsManager.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -108,18 +107,6 @@
     <Content Include="Resources\ClaudeVS_128.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Lib\Microsoft.Terminal.Control.Debug.dll" Condition="'$(Configuration)' == 'Debug'">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>Microsoft.Terminal.Control.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
-    </Content>
-    <Content Include="Lib\Microsoft.Terminal.Control.Release.dll" Condition="'$(Configuration)' == 'Release'">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>Microsoft.Terminal.Control.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VSPackage.resx">
@@ -136,8 +123,6 @@
     <Reference Include="System.Xaml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CI.Microsoft.Terminal.Wpf" Version="1.25.250100001-debug" PrivateAssets="all" Condition="'$(Configuration)' == 'Debug'" />
-    <PackageReference Include="CI.Microsoft.Terminal.Wpf" Version="1.25.250100001-release" PrivateAssets="all" Condition="'$(Configuration)' == 'Release'" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.755" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime" NoWarn="NU1604" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120" NoWarn="NU1604" />

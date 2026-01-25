@@ -140,9 +140,10 @@ namespace ClaudeVS
             }
 
             var terminalWindow = window as ClaudeTerminal;
-            if (terminalWindow?.Terminal != null && terminalWindow.Terminal.IsRunning)
+            var terminalControl = terminalWindow?.Content as ClaudeTerminalControl;
+            if (terminalControl != null)
             {
-                terminalWindow.Terminal.WriteInput(inputToSend);
+                terminalControl.SendToClaude(inputToSend, false);
                 Debug.WriteLine($"AgentActionCommand sent input to terminal");
             }
             else

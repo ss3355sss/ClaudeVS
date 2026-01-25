@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
              xmlns:local="clr-namespace:ClaudeVS"
-             xmlns:terminal="clr-namespace:Microsoft.Terminal.Wpf;assembly=Microsoft.Terminal.Wpf"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="400"
              Background="#1e1e1e"
@@ -218,12 +217,9 @@
             </StackPanel>
         </Border>
 
-        <Border x:Name="TerminalBorder" Grid.Row="1" HorizontalAlignment="Left">
-            <terminal:TerminalControl x:Name="TerminalControl"
-                                      Background="#1e1e1e"
-                                      Foreground="#d4d4d4"
-                                      IsHitTestVisible="True"
-                                      Focusable="True"/>
+        <Border x:Name="TerminalBorder" Grid.Row="1" HorizontalAlignment="Stretch" Background="#1e1e1e">
+            <local:EmbeddedConsoleHost x:Name="ConsoleHost"
+                                       Focusable="True"/>
         </Border>
     </Grid>
 </UserControl>
