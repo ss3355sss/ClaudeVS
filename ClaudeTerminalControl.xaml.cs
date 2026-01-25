@@ -446,12 +446,11 @@ namespace ClaudeVS
 		{
 			string effectiveTheme = GetEffectiveTheme();
 
-			var bgColor = GetThemeBackgroundColor();
-			SolidColorBrush toolbarBg = new SolidColorBrush(bgColor);
-			SolidColorBrush buttonBg, buttonFg, buttonBorder;
+			SolidColorBrush toolbarBg, buttonBg, buttonFg, buttonBorder;
 
 			if (effectiveTheme == "Light")
 			{
+				toolbarBg = new SolidColorBrush(Color.FromRgb(0xE8, 0xE8, 0xE8));
 				buttonBg = new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF5));
 				buttonFg = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
 				buttonBorder = new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF5));
@@ -464,6 +463,7 @@ namespace ClaudeVS
 			}
 			else
 			{
+				toolbarBg = new SolidColorBrush(Color.FromRgb(0x0C, 0x0C, 0x0C));
 				buttonBg = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
 				buttonFg = new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4));
 				buttonBorder = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));

@@ -211,7 +211,6 @@ namespace ClaudeVS
 		private bool isDisposed = false;
 		private bool isEmbedded = false;
 		private HwndSource hwndSource;
-		private System.Windows.Threading.DispatcherTimer fontRestoreTimer;
 
 		public event EventHandler ProcessExited;
 
@@ -687,78 +686,10 @@ namespace ClaudeVS
 				int width = (int)(lParam.ToInt64() & 0xFFFF);
 				int height = (int)((lParam.ToInt64() >> 16) & 0xFFFF);
 				if (width > 0 && height > 0)
-				{
 					MoveWindow(consoleWindowHandle, 0, 0, width, height, true);
-					ScheduleFontRestore();
-				}
 			}
 
 			return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
-		}
-
-		private void ScheduleFontRestore()
-		{
-			if (fontRestoreTimer == null)
-			{
-				fontRestoreTimer = new System.Windows.Threading.DispatcherTimer
-				{
-					Interval = TimeSpan.FromMilliseconds(300)
-				};
-				fontRestoreTimer.Tick += (s, args) =>
-				{
-					fontRestoreTimer.Stop();
-					if (consoleProcess != null && !consoleProcess.HasExited && isEmbedded)
-					{
-						ApplyFontOnly();
-					}
-				};
-			}
-
-			fontRestoreTimer.Stop();
-			fontRestoreTimer.Start();
-		}
-
-		private void ApplyFontOnly()
-		{
-			if (consoleProcess == null || consoleProcess.HasExited)
-				return;
-
-			try
-			{
-				FreeConsole();
-
-				uint pidToAttach = (uint)consoleProcess.Id;
-				uint childPid = GetChildProcessId(consoleProcess.Id);
-				if (childPid != 0)
-					pidToAttach = childPid;
-
-				if (!AttachConsole(pidToAttach))
-					return;
-
-				IntPtr hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-				if (hOutput == IntPtr.Zero || hOutput == (IntPtr)(-1))
-				{
-					FreeConsole();
-					return;
-				}
-
-				var fontInfo = new CONSOLE_FONT_INFOEX();
-				fontInfo.cbSize = (uint)Marshal.SizeOf(fontInfo);
-				fontInfo.nFont = 0;
-				fontInfo.dwFontSize.X = 0;
-				fontInfo.dwFontSize.Y = fontSize;
-				fontInfo.FontFamily = 54;
-				fontInfo.FontWeight = 400;
-				fontInfo.FaceName = "Consolas";
-				SetCurrentConsoleFontEx(hOutput, false, ref fontInfo);
-
-				FreeConsole();
-			}
-			catch (Exception ex)
-			{
-				Debug.WriteLine($"Exception in ApplyFontOnly: {ex}");
-				FreeConsole();
-			}
 		}
 
 		private void Cleanup()
@@ -771,9 +702,6 @@ namespace ClaudeVS
 
 			try
 			{
-				fontRestoreTimer?.Stop();
-				fontRestoreTimer = null;
-
 				if (consoleProcess != null && !consoleProcess.HasExited)
 				{
 					try { consoleProcess.Kill(); } catch { }

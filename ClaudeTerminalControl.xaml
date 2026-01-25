@@ -134,7 +134,7 @@
         </Grid.RowDefinitions>
 
         <Border x:Name="ToolbarBorder" Grid.Row="0"
-                Background="#1e1e1e"
+                Background="#0c0c0c"
                 BorderBrush="Black"
                 BorderThickness="0"
                 Padding="4">
