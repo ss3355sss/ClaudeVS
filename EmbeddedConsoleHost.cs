@@ -11,33 +11,6 @@ namespace ClaudeVS
 
 	public class EmbeddedConsoleHost : HwndHost
 	{
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
-
-		private const uint TH32CS_SNAPPROCESS = 0x00000002;
-
-		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-		private struct PROCESSENTRY32
-		{
-			public uint dwSize;
-			public uint cntUsage;
-			public uint th32ProcessID;
-			public IntPtr th32DefaultHeapID;
-			public uint th32ModuleID;
-			public uint cntThreads;
-			public uint th32ParentProcessID;
-			public int pcPriClassBase;
-			public uint dwFlags;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-			public string szExeFile;
-		}
-
 		[DllImport("user32.dll", SetLastError = true)]
 		private static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
 
@@ -99,20 +72,6 @@ namespace ClaudeVS
 
 		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 		private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
-
-		[DllImport("ntdll.dll")]
-		private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref PROCESS_BASIC_INFORMATION processInformation, int processInformationLength, out int returnLength);
-
-		[StructLayout(LayoutKind.Sequential)]
-		private struct PROCESS_BASIC_INFORMATION
-		{
-			public IntPtr Reserved1;
-			public IntPtr PebBaseAddress;
-			public IntPtr Reserved2_0;
-			public IntPtr Reserved2_1;
-			public IntPtr UniqueProcessId;
-			public IntPtr InheritedFromUniqueProcessId;
-		}
 
 		[StructLayout(LayoutKind.Explicit)]
 		private struct INPUT_RECORD
@@ -263,12 +222,10 @@ namespace ClaudeVS
 				string cliCommand = GetCliCommand();
 				string workDir = workingDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-				string conhostPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "conhost.exe");
-
 				var psi = new ProcessStartInfo
 				{
-					FileName = conhostPath,
-					Arguments = $"\"{cliCommand}\"",
+					FileName = "cmd.exe",
+					Arguments = $"/k \"{cliCommand}\"",
 					WorkingDirectory = workDir,
 					UseShellExecute = false,
 					CreateNoWindow = false
@@ -292,58 +249,6 @@ namespace ClaudeVS
 			}
 		}
 
-		private bool IsChildOfProcess(uint childPid, int parentPid)
-		{
-			try
-			{
-				using (var proc = Process.GetProcessById((int)childPid))
-				{
-					var pbi = new PROCESS_BASIC_INFORMATION();
-					int status = NtQueryInformationProcess(proc.Handle, 0, ref pbi, Marshal.SizeOf(pbi), out _);
-					if (status == 0)
-					{
-						return pbi.InheritedFromUniqueProcessId.ToInt32() == parentPid;
-					}
-				}
-			}
-			catch
-			{
-			}
-			return false;
-		}
-
-		private uint GetChildProcessId(int parentPid)
-		{
-			IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-			if (snapshot == IntPtr.Zero || snapshot == (IntPtr)(-1))
-				return 0;
-
-			try
-			{
-				var entry = new PROCESSENTRY32();
-				entry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32));
-
-				if (Process32First(snapshot, ref entry))
-				{
-					do
-					{
-						if (entry.th32ParentProcessID == (uint)parentPid)
-						{
-							return entry.th32ProcessID;
-						}
-					} while (Process32Next(snapshot, ref entry));
-				}
-			}
-			finally
-			{
-				CloseHandle(snapshot);
-			}
-			return 0;
-		}
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern bool CloseHandle(IntPtr hObject);
-
 		private void WaitAndEmbedConsole()
 		{
 			try
@@ -363,7 +268,7 @@ namespace ClaudeVS
 					EnumWindows((hWnd, lParam) =>
 					{
 						GetWindowThreadProcessId(hWnd, out uint windowPid);
-						if (windowPid == pid || IsChildOfProcess(windowPid, pid))
+						if (windowPid == pid)
 						{
 							StringBuilder className = new StringBuilder(256);
 							GetClassName(hWnd, className, className.Capacity);
@@ -398,8 +303,6 @@ namespace ClaudeVS
 
 			try
 			{
-				ShowWindow(consoleWindowHandle, SW_HIDE);
-
 				int style = GetWindowLong(consoleWindowHandle, GWL_STYLE);
 				style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_BORDER | WS_DLGFRAME);
 				style |= WS_CHILD;
@@ -446,13 +349,7 @@ namespace ClaudeVS
 			try
 			{
 				FreeConsole();
-
-				uint pidToAttach = (uint)consoleProcess.Id;
-				uint childPid = GetChildProcessId(consoleProcess.Id);
-				if (childPid != 0)
-					pidToAttach = childPid;
-
-				if (!AttachConsole(pidToAttach))
+				if (!AttachConsole((uint)consoleProcess.Id))
 					return;
 
 				IntPtr hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -489,10 +386,6 @@ namespace ClaudeVS
 				fontInfo.dwFontSize.Y = fontSize;
 				fontInfo.FontFamily = 54;
 				fontInfo.FontWeight = 400;
-				//fontInfo.FaceName = "Lucida Console";
-				//fontInfo.FaceName = "Cascadia Mono";
-				//fontInfo.FaceName = "Cascadia Code";
-				//fontInfo.FaceName = "Cascadia";
 				fontInfo.FaceName = "Consolas";
 				SetCurrentConsoleFontEx(hOutput, false, ref fontInfo);
 
@@ -565,13 +458,7 @@ namespace ClaudeVS
 			try
 			{
 				FreeConsole();
-
-				uint pidToAttach = (uint)consoleProcess.Id;
-				uint childPid = GetChildProcessId(consoleProcess.Id);
-				if (childPid != 0)
-					pidToAttach = childPid;
-
-				if (!AttachConsole(pidToAttach))
+				if (!AttachConsole((uint)consoleProcess.Id))
 					return;
 
 				IntPtr hInput = GetStdHandle(STD_INPUT_HANDLE);
