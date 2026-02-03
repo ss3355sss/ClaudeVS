@@ -21,11 +21,8 @@ namespace ClaudeVS
     [Guid("f4c7b9e2-3a5d-6c8f-1b2e-4a9d7c5f3e8b")]
     public class ClaudeTerminal : ToolWindowPane, IOleCommandTarget, IVsWindowFrameNotify3
     {
-        private ConPtyTerminal conPtyTerminal;
-        private ConPtyTerminalConnection terminalConnection;
-
-        public ConPtyTerminal Terminal => conPtyTerminal;
-        public ConPtyTerminalConnection TerminalConnection => terminalConnection;
+        public ConPtyTerminal Terminal => (this.Content as ClaudeTerminalControl)?.ActiveTerminal;
+        public ConPtyTerminalConnection TerminalConnection => (this.Content as ClaudeTerminalControl)?.ActiveConnection;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClaudeTerminal"/> class.
@@ -38,30 +35,15 @@ namespace ClaudeVS
             // we are not calling Dispose on this object as this is lifetime managed by the
             // shell so the copy instance will be reused.
 
-            if (conPtyTerminal != null)
-            {
-                conPtyTerminal?.Dispose();
-                conPtyTerminal = null;
-                terminalConnection = null;
-            }
-
             this.Content = new ClaudeTerminalControl(this);
             this.ToolBar = null;
-        }
-
-        public void SetTerminalInstances(ConPtyTerminal terminal, ConPtyTerminalConnection connection)
-        {
-            conPtyTerminal = terminal;
-            terminalConnection = connection;
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                conPtyTerminal?.Dispose();
-                terminalConnection = null;
-                conPtyTerminal = null;
+                (this.Content as ClaudeTerminalControl)?.DisposeAllTerminals();
             }
             base.Dispose(disposing);
         }
@@ -115,9 +97,9 @@ namespace ClaudeVS
             {
                 if ((VSConstants.VSStd97CmdID)nCmdID == VSConstants.VSStd97CmdID.PaneActivateDocWindow)
                 {
-                    if (conPtyTerminal != null && conPtyTerminal.IsRunning)
+                    if (Terminal != null && Terminal.IsRunning)
                     {
-						conPtyTerminal.WriteInput("\x1b");
+						Terminal.WriteInput("\x1b");
                     }
 					return (int)Microsoft.VisualStudio.VSConstants.S_OK;
                 }
