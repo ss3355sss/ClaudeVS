@@ -853,6 +853,7 @@ namespace ClaudeVS
 		}
 
 		private bool wasMouseButtonDown = false;
+		private bool mouseDownStartedInTerminal = false;
 
 		private void SelectionScrollTimer_Tick(AgentTab tab)
 		{
@@ -860,7 +861,11 @@ namespace ClaudeVS
 			{
 				if (tab.TerminalHwnd == IntPtr.Zero)
 				{
-					return;
+					ExtractTerminalHandle(tab);
+					if (tab.TerminalHwnd == IntPtr.Zero)
+					{
+						return;
+					}
 				}
 
 				bool isMouseDown = IsLeftMouseButtonDown();
@@ -868,10 +873,9 @@ namespace ClaudeVS
 				if (!isMouseDown)
 				{
 					wasMouseButtonDown = false;
+					mouseDownStartedInTerminal = false;
 					return;
 				}
-
-				wasMouseButtonDown = true;
 
 				if (!GetCursorPos(out POINT cursorPos))
 				{
@@ -879,6 +883,19 @@ namespace ClaudeVS
 				}
 
 				var terminalPoint = tab.TerminalControl.PointFromScreen(new Point(cursorPos.X, cursorPos.Y));
+
+				if (!wasMouseButtonDown)
+				{
+					wasMouseButtonDown = true;
+					mouseDownStartedInTerminal = terminalPoint.X >= 0 && terminalPoint.X <= tab.TerminalControl.ActualWidth &&
+					                             terminalPoint.Y >= 0 && terminalPoint.Y <= tab.TerminalControl.ActualHeight;
+				}
+
+				if (!mouseDownStartedInTerminal)
+				{
+					return;
+				}
+
 				double edgeMargin = 20;
 				double terminalTop = edgeMargin;
 				double terminalBottom = tab.TerminalControl.ActualHeight - edgeMargin;
