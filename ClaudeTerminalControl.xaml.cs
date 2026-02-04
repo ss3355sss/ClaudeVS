@@ -87,6 +87,7 @@ namespace ClaudeVS
 		private int nextTabIndex = 1;
 		private List<AgentTab> agentTabs = new List<AgentTab>();
 		private AgentTab activeTab;
+		private AgentTab lastUserSelectedTab;
 		private bool eventsInitialized;
 
 		/// <summary>
@@ -100,6 +101,7 @@ namespace ClaudeVS
 			this.Unloaded += ClaudeTerminalControl_Unloaded;
 			this.SizeChanged += ClaudeTerminalControl_SizeChanged;
 			this.IsVisibleChanged += ClaudeTerminalControl_IsVisibleChanged;
+			AgentTabs.GotKeyboardFocus += AgentTabs_GotKeyboardFocus;
 		}
 
 		private void ClaudeTerminalControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
@@ -120,6 +122,10 @@ namespace ClaudeVS
 				if (activeTab == null)
 				{
 					SetActiveTab(agentTabs[0]);
+				}
+				else if (lastUserSelectedTab == null)
+				{
+					lastUserSelectedTab = activeTab;
 				}
 
 				if (!eventsInitialized)
@@ -419,6 +425,8 @@ namespace ClaudeVS
 					focusTimer.Stop();
 				}
 
+				var tabToFocus = lastUserSelectedTab ?? activeTab;
+
 				focusTimer = new DispatcherTimer
 				{
 					Interval = TimeSpan.FromMilliseconds(100)
@@ -428,6 +436,12 @@ namespace ClaudeVS
 						focusTimer.Stop();
 						try
 						{
+							if (tabToFocus != null && AgentTabs.SelectedItem != tabToFocus.TabItem)
+							{
+								AgentTabs.SelectedItem = tabToFocus.TabItem;
+								activeTab = tabToFocus;
+							}
+
 							if (activeTab?.TerminalControl == null)
 							{
 								return;
@@ -579,6 +593,7 @@ namespace ClaudeVS
 			}
 
 			activeTab = tab;
+			lastUserSelectedTab = tab;
 			AgentTabs.SelectedItem = tab.TabItem;
 			EnsureTabInitialized(tab);
 			FocusTerminal();
@@ -605,6 +620,12 @@ namespace ClaudeVS
 				if (selectedTab != null)
 				{
 					activeTab = selectedTab;
+
+					if (Mouse.LeftButton == MouseButtonState.Pressed && AgentTabs.IsMouseOver)
+					{
+						lastUserSelectedTab = selectedTab;
+					}
+
 					EnsureTabInitialized(selectedTab);
 					FocusTerminal();
 				}
@@ -612,6 +633,30 @@ namespace ClaudeVS
 			catch (Exception ex)
 			{
 				Debug.WriteLine($"Exception in AgentTabs_SelectionChanged: {ex}");
+			}
+		}
+
+		private void AgentTabs_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+		{
+			var tabToRestore = lastUserSelectedTab;
+			if (tabToRestore == null)
+			{
+				return;
+			}
+
+			if (AgentTabs.SelectedItem != tabToRestore.TabItem)
+			{
+				AgentTabs.SelectedItem = tabToRestore.TabItem;
+				activeTab = tabToRestore;
+			}
+
+			if (activeTab?.TerminalControl != null)
+			{
+				var hwndHost = FindVisualChild<HwndHost>(activeTab.TerminalControl);
+				if (hwndHost != null && hwndHost.Handle != IntPtr.Zero)
+				{
+					SetFocus(hwndHost.Handle);
+				}
 			}
 		}
 
