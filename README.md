@@ -40,4 +40,6 @@ These can be configured in Options -> Environment -> Keyboard under the followin
 * ClaudeVS.AgentAction3
 * ClaudeVS.AgentAction4
 
-![ClaudeVS_3_2](https://github.com/user-attachments/assets/29f0e061-3cb9-44ee-913e-89dfdedbbd03)
+![claudevs_dark](https://github.com/user-attachments/assets/9fbe406b-b329-4589-9a8e-771e5e801789)
+
+![claudevs_light](https://github.com/user-attachments/assets/ad602517-e77a-4c95-a198-52b6d3786282)
