@@ -89,8 +89,8 @@
             </ComboBox.ItemContainerStyle>
             <ComboBoxItem Content="Copilot" Tag="copilot"/>
             <ComboBoxItem Content="Claude" Tag="claude"/>
-            <ComboBoxItem Content="Codex" Tag="wsl bash -lc &quot;cd \&quot;$(wslpath -a '%cd%')\&quot; &amp;&amp; codex&quot;"/>
-            <ComboBoxItem Content="Gemini" Tag="wsl bash -lc &quot;cd \&quot;$(wslpath -a '%cd%')\&quot; &amp;&amp; gemini&quot;"/>
+            <ComboBoxItem Content="Codex" Tag="codex"/>
+            <ComboBoxItem Content="Gemini" Tag="gemini"/>
         </ComboBox>
         <TextBlock Text="Or enter command name:" Grid.Row="2" Margin="0,0,0,5"/>
         <TextBox x:Name="CommandTextBox" Grid.Row="3" Margin="0,0,0,10" Background="#252526" Foreground="#d4d4d4" BorderBrush="#3f3f46" CaretBrush="#d4d4d4"/>
