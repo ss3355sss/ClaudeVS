@@ -1,44 +1,63 @@
 # ClaudeVS
 
-[Free on the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GlassBeaver.ClaudeVS)
+**Use top AI coding CLIs directly inside Visual Studio.**
 
-_NEW FEATURE:_ Voice input. Press Alt+S to activate speech recognition, speak into your mic and have Claude execute your command.
+ClaudeVS integrates **Claude Code CLI, Copilot CLI, Codex CLI, and Gemini CLI** into Visual Studio 2022 and 2026, so you can work with your preferred agent without leaving the IDE.
 
-Straightforward integration of Claude Code CLI, Copilot CLI, Codex CLI and Gemini CLI into Visual Studio 2026 and 2022.
-Works by launching an integrated console window with the desired agent (or any custom program), so the agents/programs retain their native look & feel and functionality while VS is able to communicate with them.
+## Why ClaudeVS
 
-Available actions:
-- Voice input: press Alt+S to activate speech recognition, speak into your mic and have Claude execute your command
-- Send active file path, line number and selected text to agent
-- Execute comment in code as a command
-- Send exception/error details from debugger to agent (callstack, error message, etc.)
+- **Multi-agent productivity with tabs**  
+  Run multiple agents at the same time, each in its own tab, to compare outputs, split tasks, and switch contexts quickly.
+- **Native CLI experience inside Visual Studio**  
+  Agents run in integrated console windows, preserving their original behavior and controls.
+- **Faster development loop**  
+  Send editor context, task lines/comments, and debugger exceptions straight to an agent.
+- **Hands-free input**  
+  Press `Alt+S` to use Windows speech recognition for voice commands.
+- **Theme-aware UI**  
+  Supports **Light**, **Dark**, and **System** theme modes.
+- **Privacy-first architecture**  
+  The extension does **not** save credentials, conversation history, or other user data.
 
-Nothing is saved by the extension: no credentials, conversations or anything else since it just embeds the actual CLI programs inside Visual Studio.
+## Core Features
 
-**Usage**
+- Multiple concurrent agents via tabs
+- Voice command input (`Alt+S`)
+- Send active file path, line number, and selected text
+- Execute current line/comment as a command
+- Send debugger exception details (error, call stack, etc.)
+- Support for custom programs in addition to supported CLIs
+- Supports Light, Dark, and System themes
 
-If you want to use your voice instead of typing, press Alt+S to record your command and hit Enter to send. The recording stops automatically when Windows speech recognition detects you've stopped speaking.
+## Usage
 
-| Menu Item  | Description |
+| Menu Item | Description |
 | --- | --- |
-| View -> ClaudeVS | Launch Claude Code CLI (requires an open project/solution) |
-| View -> Send Location to Agent | Send active file path, line number and selected text to agent |
-| View -> Send Task to Agent | Execute current line as a command |
-| View -> Send Exception to Agent | Send exception/error details to agent from debugger |
+| **View → ClaudeVS** | Launch Claude Code CLI (requires an open project/solution) |
+| **View → Send Location to Agent** | Send active file path, line number, and selected text |
+| **View → Send Task to Agent** | Execute current line as a command |
+| **View → Send Exception to Agent** | Send debugger exception/error details from debugger |
 
-All of these are hotkeyable:
-- ClaudeVS.SpeechCommand
-- View.ClaudeVS
-- View.SendLocationtoAgent
-- View.SendTasktoAgent
-- View.SendDebuggerExceptiontoAgent
+For voice input: press `Alt+S`, speak your command, then press Enter to send. Recording stops automatically when Windows speech recognition detects you are done speaking.
 
-Certain hotkeys used by Claude Code CLI like Ctrl+B, Ctrl+O, Ctrl+R are captured and forwarded.
-These can be configured in Options -> Environment -> Keyboard under the following commands:
-* ClaudeVS.AgentAction1
-* ClaudeVS.AgentAction2
-* ClaudeVS.AgentAction3
-* ClaudeVS.AgentAction4
+## Keyboard Shortcuts
+
+All actions are hotkey-configurable:
+
+- `ClaudeVS.SpeechCommand`
+- `View.ClaudeVS`
+- `View.SendLocationtoAgent`
+- `View.SendTasktoAgent`
+- `View.SendDebuggerExceptiontoAgent`
+
+ClaudeVS can also capture and forward key combinations commonly used by Claude Code CLI (for example `Ctrl+B`, `Ctrl+O`, `Ctrl+R`). Configure these in:
+
+**Tools → Options → Environment → Keyboard**
+
+- `ClaudeVS.AgentAction1`
+- `ClaudeVS.AgentAction2`
+- `ClaudeVS.AgentAction3`
+- `ClaudeVS.AgentAction4`
 
 ![claudevs_dark](https://github.com/user-attachments/assets/9fbe406b-b329-4589-9a8e-771e5e801789)
 
