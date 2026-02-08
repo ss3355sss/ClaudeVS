@@ -12,7 +12,6 @@ namespace ClaudeVS
 	using System.Windows.Input;
 	using System.Windows.Interop;
 	using System.Windows.Media;
-	using System.Windows.Media.Media3D;
 	using System.Windows.Controls.Primitives;
 	using EnvDTE;
 	using EnvDTE80;

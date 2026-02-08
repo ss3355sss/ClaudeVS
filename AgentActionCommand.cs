@@ -21,6 +21,7 @@ namespace ClaudeVS
         public const int AgentAction4Id = 0x0108;
         public const int AgentAction5Id = 0x0109;
         public const int AgentAction6Id = 0x010A;
+        public const int AgentAction7Id = 0x010C;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -52,6 +53,7 @@ namespace ClaudeVS
             AddCommand(commandService, AgentAction4Id);
             AddCommand(commandService, AgentAction5Id);
             AddCommand(commandService, AgentAction6Id);
+            AddCommand(commandService, AgentAction7Id);
         }
 
         private void AddCommand(OleMenuCommandService commandService, int commandId)
@@ -169,6 +171,7 @@ namespace ClaudeVS
                 case AgentAction4Id: suffix = "AgentAction4"; break;
                 case AgentAction5Id: suffix = "AgentAction5"; break;
                 case AgentAction6Id: suffix = "AgentAction6"; break;
+                case AgentAction7Id: suffix = "AgentAction7"; break;
                 default:
                     Debug.WriteLine($"AgentActionCommand: Unknown command ID {commandId}");
                     return null;
