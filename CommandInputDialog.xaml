@@ -88,7 +88,7 @@
                 </Style>
             </ComboBox.ItemContainerStyle>
             <ComboBoxItem Content="Copilot" Tag="copilot"/>
-            <ComboBoxItem Content="Claude" Tag="claude"/>
+			<ComboBoxItem Content="Claude" Tag="%USERPROFILE%\.local\bin\claude.exe"/>
             <ComboBoxItem Content="Codex" Tag="codex"/>
             <ComboBoxItem Content="Gemini" Tag="gemini"/>
         </ComboBox>
