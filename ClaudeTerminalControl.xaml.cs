@@ -1051,6 +1051,50 @@ namespace ClaudeVS
 			}
 		}
 
+		private void MacrosButton_Click(object sender, RoutedEventArgs e)
+		{
+			try
+			{
+				if (activeTab?.Terminal != null && activeTab.Terminal.IsRunning)
+				{
+					var terminal = activeTab.Terminal;
+					System.Threading.Tasks.Task.Run(async () =>
+					{
+						terminal.WriteInput("/model");
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("\r");
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("1");
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("/model");
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("\r");
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("\x1b[C");
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("\r");
+
+
+
+						//terminal.WriteInput("\x1bt");
+						//await System.Threading.Tasks.Task.Delay(200);
+						//terminal.WriteInput("2");
+
+						await System.Threading.Tasks.Task.Delay(500);
+						await Dispatcher.InvokeAsync(() =>
+						{
+							var bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
+							Trace.WriteLine($"[ClaudeVS] Terminal buffer contents:\n{bufferText}");
+						});
+					});
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in MacrosButton_Click: {ex}");
+			}
+		}
+
 		private void ApplyFontSize(AgentTab tab)
 		{
 			try

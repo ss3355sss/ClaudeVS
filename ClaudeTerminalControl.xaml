@@ -377,6 +377,21 @@
                     IsTabStop="False"
                     Style="{StaticResource DarkButtonStyle}"
                     Click="FontSizeButton_Click"/>
+
+            <Button x:Name="MacrosButton"
+                    Content="⚡ Macros"
+                    Padding="4,2"
+                    FontSize="12"
+                    Margin="0"
+                    HorizontalAlignment="Left"
+                    Background="#1e1e1e"
+                    Foreground="#d4d4d4"
+                    BorderBrush="#1e1e1e"
+                    BorderThickness="0"
+                    Focusable="False"
+                    IsTabStop="False"
+                    Style="{StaticResource DarkButtonStyle}"
+                    Click="MacrosButton_Click"/>
             </StackPanel>
         </Border>
 
