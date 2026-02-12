@@ -108,13 +108,13 @@
     <Content Include="Resources\ClaudeVS_128.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Lib\Microsoft.Terminal.Control.Debug.dll" Condition="'$(Configuration)' == 'Debug'">
+    <Content Include="..\terminal\bin\x64\Debug\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll" Condition="'$(Configuration)' == 'Debug'">
       <IncludeInVSIX>true</IncludeInVSIX>
       <Link>Microsoft.Terminal.Control.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
     </Content>
-    <Content Include="Lib\Microsoft.Terminal.Control.Release.dll" Condition="'$(Configuration)' == 'Release'">
+    <Content Include="..\terminal\bin\x64\Release\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll" Condition="'$(Configuration)' == 'Release'">
       <IncludeInVSIX>true</IncludeInVSIX>
       <Link>Microsoft.Terminal.Control.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -130,14 +130,21 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Design" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
     <Reference Include="System.Xaml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CI.Microsoft.Terminal.Wpf" Version="1.25.250100001-debug" PrivateAssets="all" Condition="'$(Configuration)' == 'Debug'" />
-    <PackageReference Include="CI.Microsoft.Terminal.Wpf" Version="1.25.250100001-release" PrivateAssets="all" Condition="'$(Configuration)' == 'Release'" />
+    <Reference Include="Microsoft.Terminal.Wpf" Condition="'$(Configuration)' == 'Debug'">
+      <HintPath>..\terminal\bin\AnyCPU\Debug\WpfTerminalControl\net472\Microsoft.Terminal.Wpf.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Wpf" Condition="'$(Configuration)' == 'Release'">
+      <HintPath>..\terminal\bin\AnyCPU\Release\WpfTerminalControl\net472\Microsoft.Terminal.Wpf.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.755" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime" NoWarn="NU1604" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120" NoWarn="NU1604" />

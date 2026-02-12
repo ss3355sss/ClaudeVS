@@ -496,6 +496,35 @@ namespace ClaudeVS
 		public ConPtyTerminal ActiveTerminal => activeTab?.Terminal;
 		public ConPtyTerminalConnection ActiveConnection => activeTab?.Connection;
 
+		public IntPtr TerminalHwnd
+		{
+			get
+			{
+				if (activeTab == null) return IntPtr.Zero;
+				if (activeTab.TerminalHwnd != IntPtr.Zero) return activeTab.TerminalHwnd;
+				if (activeTab.TerminalControl != null)
+				{
+					var hwndHost = FindVisualChild<HwndHost>(activeTab.TerminalControl);
+					if (hwndHost != null && hwndHost.Handle != IntPtr.Zero)
+					{
+						activeTab.TerminalHwnd = hwndHost.Handle;
+					}
+				}
+				return activeTab?.TerminalHwnd ?? IntPtr.Zero;
+			}
+		}
+
+		public IntPtr TerminalHandle
+		{
+			get
+			{
+				if (activeTab == null) return IntPtr.Zero;
+				if (activeTab.TerminalHandle != IntPtr.Zero) return activeTab.TerminalHandle;
+				ExtractTerminalHandle(activeTab);
+				return activeTab?.TerminalHandle ?? IntPtr.Zero;
+			}
+		}
+
 		public void DisposeAllTerminals()
 		{
 			StopClaude();
