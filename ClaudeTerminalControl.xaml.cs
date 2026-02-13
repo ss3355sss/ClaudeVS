@@ -17,6 +17,7 @@ namespace ClaudeVS
 	using EnvDTE80;
 	using Microsoft.Terminal.Wpf;
 	using Microsoft.VisualStudio.Shell;
+	using Microsoft.VisualStudio.Shell.Interop;
 
 	/// <summary>
 	/// Interaction logic for ClaudeTerminalControl.xaml
@@ -47,6 +48,7 @@ namespace ClaudeVS
 		private const uint WM_MOUSEWHEEL = 0x020A;
 		private const int WHEEL_DELTA = 120;
 		private const int MK_LBUTTON = 0x0001;
+	private const int WM_LBUTTONDOWN = 0x0201;
 
 		[StructLayout(LayoutKind.Sequential)]
 		private struct POINT
@@ -75,6 +77,7 @@ namespace ClaudeVS
 			public DispatcherTimer RefreshTimer;
 			public DateTime LastOutputTime = DateTime.MinValue;
 			public string Command;
+			public bool MouseHookInstalled;
 		}
 
 		private ClaudeTerminal claudeTerminal;
@@ -824,6 +827,20 @@ namespace ClaudeVS
 						}
 
 						tab.UserScrollMethod = termContainer.GetType().GetMethod("UserScroll", BindingFlags.NonPublic | BindingFlags.Instance);
+
+						if (!tab.MouseHookInstalled && termContainer is HwndHost hwndHost)
+						{
+							hwndHost.MessageHook += delegate(IntPtr h, int m, IntPtr w, IntPtr l, ref bool hd)
+							{
+								if (m == WM_LBUTTONDOWN)
+								{
+									(claudeTerminal?.Frame as IVsWindowFrame)?.Show();
+									SetFocus(h);
+								}
+								return IntPtr.Zero;
+							};
+							tab.MouseHookInstalled = true;
+						}
 					}
 				}
 
