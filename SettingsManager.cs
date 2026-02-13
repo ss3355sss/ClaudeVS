@@ -15,6 +15,7 @@ namespace ClaudeVS
         private const short DefaultFontSize = 10;
         private const string ThemeKey = "Theme";
         private const string DefaultTheme = "System";
+        private const string QuickSwitchPresetsKey = "QuickSwitchPresets";
 
         public static string GetLastCommand()
         {
@@ -160,6 +161,73 @@ namespace ClaudeVS
             catch (Exception ex)
             {
                 Debug.WriteLine($"Exception in SaveTheme: {ex}");
+            }
+        }
+
+        public static void LoadQuickSwitchPresets(int[] models, bool[] thinking, int[] effort)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var settingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(CollectionPath))
+                {
+                    return;
+                }
+
+                if (!userSettingsStore.PropertyExists(CollectionPath, QuickSwitchPresetsKey))
+                {
+                    return;
+                }
+
+                string presets = userSettingsStore.GetString(CollectionPath, QuickSwitchPresetsKey);
+                string[] parts = presets.Split('|');
+                if (parts.Length != 3)
+                {
+                    return;
+                }
+
+                for (int i = 0; i < 3; i++)
+                {
+                    string[] values = parts[i].Split(',');
+                    if (values.Length == 3)
+                    {
+                        if (int.TryParse(values[0], out int m) && m >= 0 && m < 3)
+                            models[i] = m;
+                        if (bool.TryParse(values[1], out bool t))
+                            thinking[i] = t;
+                        if (int.TryParse(values[2], out int e) && e >= 0 && e < 3)
+                            effort[i] = e;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in LoadQuickSwitchPresets: {ex}");
+            }
+        }
+
+        public static void SaveQuickSwitchPresets(int[] models, bool[] thinking, int[] effort)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var settingsManager = new ShellSettingsManager(ServiceProvider.GlobalProvider);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(CollectionPath))
+                {
+                    userSettingsStore.CreateCollection(CollectionPath);
+                }
+
+                string presets = $"{models[0]},{thinking[0]},{effort[0]}|{models[1]},{thinking[1]},{effort[1]}|{models[2]},{thinking[2]},{effort[2]}";
+                userSettingsStore.SetString(CollectionPath, QuickSwitchPresetsKey, presets);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception in SaveQuickSwitchPresets: {ex}");
             }
         }
     }

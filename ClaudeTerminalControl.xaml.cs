@@ -117,6 +117,7 @@ namespace ClaudeVS
 				currentCommand = SettingsManager.GetLastCommand();
 				currentFontSize = SettingsManager.GetFontSize();
 				currentTheme = SettingsManager.GetTheme();
+				SettingsManager.LoadQuickSwitchPresets(quickSwitchPresetModel, quickSwitchPresetThinking, quickSwitchPresetEffort);
 
 				if (agentTabs.Count == 0)
 				{
@@ -1151,7 +1152,6 @@ namespace ClaudeVS
 
 					string[] models = { "Opus 4.6", "Sonnet 4.5", "Haiku 4.5" };
 					string[] efforts = { "Low", "Medium", "High" };
-					int[] defaultModelIndices = { 0, 1, 2 };
 
 					for (int row = 0; row < 3; row++)
 					{
@@ -1162,19 +1162,20 @@ namespace ClaudeVS
 						var modelCombo = new ComboBox { Margin = cellMargin, MinWidth = 100 };
 						foreach (var m in models)
 							modelCombo.Items.Add(m);
-						modelCombo.SelectedIndex = defaultModelIndices[row];
+						modelCombo.SelectedIndex = quickSwitchPresetModel[row];
 
 						var thinkingCheck = new CheckBox
 						{
 							Margin = cellMargin,
 							VerticalAlignment = VerticalAlignment.Center,
-							HorizontalAlignment = HorizontalAlignment.Center
+							HorizontalAlignment = HorizontalAlignment.Center,
+							IsChecked = quickSwitchPresetThinking[row]
 						};
 
 						var effortCombo = new ComboBox { Margin = cellMargin, MinWidth = 80 };
 						foreach (var ef in efforts)
 							effortCombo.Items.Add(ef);
-						effortCombo.SelectedIndex = 0;
+						effortCombo.SelectedIndex = quickSwitchPresetEffort[row];
 						effortCombo.Visibility = modelCombo.SelectedIndex == 0 ? Visibility.Visible : Visibility.Hidden;
 
 						var capturedEffortCombo = effortCombo;
@@ -1182,9 +1183,27 @@ namespace ClaudeVS
 						modelCombo.SelectionChanged += (s, ev) =>
 						{
 							capturedEffortCombo.Visibility = capturedModelCombo.SelectedIndex == 0 ? Visibility.Visible : Visibility.Hidden;
+							quickSwitchPresetModel[capturedRow] = capturedModelCombo.SelectedIndex;
+							SettingsManager.SaveQuickSwitchPresets(quickSwitchPresetModel, quickSwitchPresetThinking, quickSwitchPresetEffort);
 						};
 
 						var capturedThinkingCheck = thinkingCheck;
+						thinkingCheck.Checked += (s, ev) =>
+						{
+							quickSwitchPresetThinking[capturedRow] = true;
+							SettingsManager.SaveQuickSwitchPresets(quickSwitchPresetModel, quickSwitchPresetThinking, quickSwitchPresetEffort);
+						};
+						thinkingCheck.Unchecked += (s, ev) =>
+						{
+							quickSwitchPresetThinking[capturedRow] = false;
+							SettingsManager.SaveQuickSwitchPresets(quickSwitchPresetModel, quickSwitchPresetThinking, quickSwitchPresetEffort);
+						};
+
+						effortCombo.SelectionChanged += (s, ev) =>
+						{
+							quickSwitchPresetEffort[capturedRow] = capturedEffortCombo.SelectedIndex;
+							SettingsManager.SaveQuickSwitchPresets(quickSwitchPresetModel, quickSwitchPresetThinking, quickSwitchPresetEffort);
+						};
 						var selectButton = new Button
 						{
 							Content = "▶",
@@ -1232,6 +1251,8 @@ namespace ClaudeVS
 			iTargetModel = quickSwitchPresetModel[presetIndex];
 			bThinking = quickSwitchPresetThinking[presetIndex];
 			iTargetEffort = quickSwitchPresetEffort[presetIndex];
+
+			SettingsManager.SaveQuickSwitchPresets(quickSwitchPresetModel, quickSwitchPresetThinking, quickSwitchPresetEffort);
 
 			var terminal = activeTab.Terminal;
 			System.Threading.Tasks.Task.Run(async () =>
