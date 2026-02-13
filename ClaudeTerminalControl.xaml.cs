@@ -157,6 +157,21 @@ namespace ClaudeVS
 				ApplyThemeToAll();
 				ApplyFontSizeToAll();
 				FocusTerminal();
+
+				Dispatcher.BeginInvoke(new Action(() =>
+				{
+					try
+					{
+						if (activeTab != null)
+						{
+							ApplyFontSize(activeTab);
+						}
+					}
+					catch (Exception ex)
+					{
+						Debug.WriteLine($"Exception in deferred layout: {ex}");
+					}
+				}), DispatcherPriority.ContextIdle);
 			}
 			catch (Exception ex)
 			{
