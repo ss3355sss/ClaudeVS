@@ -125,6 +125,14 @@
           <LocCanonicalName>.ClaudeVS.QuickSwitch3</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="QuickSwitch4CommandId" priority="0x0110" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Quick Switch Preset 4</ButtonText>
+          <LocCanonicalName>.ClaudeVS.QuickSwitch4</LocCanonicalName>
+        </Strings>
+      </Button>
     </Buttons>
 
     <Bitmaps>
@@ -144,6 +152,7 @@
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch1CommandId" editor="guidClaudeTerminal" key1="1" mod1="Alt" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch2CommandId" editor="guidClaudeTerminal" key1="2" mod1="Alt" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch3CommandId" editor="guidClaudeTerminal" key1="3" mod1="Alt" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch4CommandId" editor="guidClaudeTerminal" key1="4" mod1="Alt" />
   </KeyBindings>
 
   <Symbols>
@@ -167,6 +176,7 @@
       <IDSymbol name="QuickSwitch1CommandId" value="0x010D" />
       <IDSymbol name="QuickSwitch2CommandId" value="0x010E" />
       <IDSymbol name="QuickSwitch3CommandId" value="0x010F" />
+      <IDSymbol name="QuickSwitch4CommandId" value="0x0110" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{d8f1a2b3-4c5e-6f7a-8b9c-0d1e2f3a4b5c}" >

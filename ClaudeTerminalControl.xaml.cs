@@ -91,9 +91,9 @@ namespace ClaudeVS
 		private int iTargetModel;
 		private bool bThinking;
 		private int iTargetEffort;
-		private int[] quickSwitchPresetModel = { 0, 1, 2 };
-		private bool[] quickSwitchPresetThinking = { false, false, false };
-		private int[] quickSwitchPresetEffort = { 0, 0, 0 };
+		private int[] quickSwitchPresetModel = { 0, 1, 2, 2 };
+		private bool[] quickSwitchPresetThinking = { false, false, false, false };
+		private int[] quickSwitchPresetEffort = { 0, 0, 0, 0 };
 		private bool eventsInitialized;
 
 		/// <summary>
@@ -1137,7 +1137,7 @@ namespace ClaudeVS
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-					for (int i = 0; i < 4; i++)
+					for (int i = 0; i < 5; i++)
 						grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
 					var headerMargin = new Thickness(4, 2, 4, 6);
@@ -1153,7 +1153,7 @@ namespace ClaudeVS
 					string[] models = { "Opus 4.6", "Sonnet 4.5", "Haiku 4.5" };
 					string[] efforts = { "Low", "Medium", "High" };
 
-					for (int row = 0; row < 3; row++)
+					for (int row = 0; row < 4; row++)
 					{
 						int capturedRow = row;
 						int rowIndex = row + 1;
@@ -1245,7 +1245,7 @@ namespace ClaudeVS
 
 		public void ExecuteQuickSwitch(int presetIndex)
 		{
-			if (presetIndex < 0 || presetIndex > 2) return;
+			if (presetIndex < 0 || presetIndex > 3) return;
 			if (activeTab?.Terminal == null || !activeTab.Terminal.IsRunning) return;
 
 			iTargetModel = quickSwitchPresetModel[presetIndex];

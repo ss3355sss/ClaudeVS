@@ -184,12 +184,7 @@ namespace ClaudeVS
 
                 string presets = userSettingsStore.GetString(CollectionPath, QuickSwitchPresetsKey);
                 string[] parts = presets.Split('|');
-                if (parts.Length != 3)
-                {
-                    return;
-                }
-
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < Math.Min(parts.Length, 4); i++)
                 {
                     string[] values = parts[i].Split(',');
                     if (values.Length == 3)
@@ -222,7 +217,7 @@ namespace ClaudeVS
                     userSettingsStore.CreateCollection(CollectionPath);
                 }
 
-                string presets = $"{models[0]},{thinking[0]},{effort[0]}|{models[1]},{thinking[1]},{effort[1]}|{models[2]},{thinking[2]},{effort[2]}";
+                string presets = $"{models[0]},{thinking[0]},{effort[0]}|{models[1]},{thinking[1]},{effort[1]}|{models[2]},{thinking[2]},{effort[2]}|{models[3]},{thinking[3]},{effort[3]}";
                 userSettingsStore.SetString(CollectionPath, QuickSwitchPresetsKey, presets);
             }
             catch (Exception ex)

@@ -25,6 +25,7 @@ namespace ClaudeVS
         public const int QuickSwitch1Id = 0x010D;
         public const int QuickSwitch2Id = 0x010E;
         public const int QuickSwitch3Id = 0x010F;
+        public const int QuickSwitch4Id = 0x0110;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -60,6 +61,7 @@ namespace ClaudeVS
             AddCommand(commandService, QuickSwitch1Id);
             AddCommand(commandService, QuickSwitch2Id);
             AddCommand(commandService, QuickSwitch3Id);
+            AddCommand(commandService, QuickSwitch4Id);
         }
 
         private void AddCommand(OleMenuCommandService commandService, int commandId)
@@ -113,7 +115,7 @@ namespace ClaudeVS
 
             string inputToSend = null;
 
-            if (menuCommand.CommandID.ID >= QuickSwitch1Id && menuCommand.CommandID.ID <= QuickSwitch3Id)
+            if (menuCommand.CommandID.ID >= QuickSwitch1Id && menuCommand.CommandID.ID <= QuickSwitch4Id)
             {
                 int presetIndex = menuCommand.CommandID.ID - QuickSwitch1Id;
                 ToolWindowPane qsWindow = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
