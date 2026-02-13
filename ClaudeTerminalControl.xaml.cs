@@ -87,6 +87,10 @@ namespace ClaudeVS
 		private List<AgentTab> agentTabs = new List<AgentTab>();
 		private AgentTab activeTab;
 		private AgentTab lastUserSelectedTab;
+		private Popup quickSwitchPopup;
+		private int iTargetModel;
+		private bool bThinking;
+		private int iTargetEffort;
 		private bool eventsInitialized;
 
 		/// <summary>
@@ -1080,80 +1084,209 @@ namespace ClaudeVS
 			}
 		}
 
-		private void MacrosButton_Click(object sender, RoutedEventArgs e)
+		private void QuickSwitchButton_Click(object sender, RoutedEventArgs e)
 		{
 			try
 			{
 				if (activeTab?.Terminal != null && activeTab.Terminal.IsRunning)
 				{
-					var terminal = activeTab.Terminal;
-					System.Threading.Tasks.Task.Run(async () =>
+					if (quickSwitchPopup != null && quickSwitchPopup.IsOpen)
 					{
-						terminal.WriteInput("/model");
-						await System.Threading.Tasks.Task.Delay(200);
-						terminal.WriteInput("\r");
-						await System.Threading.Tasks.Task.Delay(200);
-						terminal.WriteInput("1");
-						await System.Threading.Tasks.Task.Delay(200);
-						terminal.WriteInput("/model");
-						await System.Threading.Tasks.Task.Delay(200);
-						terminal.WriteInput("\r");
+						quickSwitchPopup.IsOpen = false;
+						return;
+					}
 
-						await System.Threading.Tasks.Task.Delay(500);
-						string bufferText = null;
-						await Dispatcher.InvokeAsync(() =>
+					string effectiveTheme = currentTheme;
+					if (effectiveTheme == "System")
+						effectiveTheme = IsSystemDarkMode() ? "Dark" : "Light";
+					bool isDark = effectiveTheme != "Light";
+
+					var bgBrush = isDark
+						? new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x30))
+						: new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF5));
+					var borderBrush = isDark
+						? new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x46))
+						: new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC));
+					var fgBrush = isDark
+						? new SolidColorBrush(Color.FromRgb(0xD4, 0xD4, 0xD4))
+						: new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+
+					var popup = new Popup
+					{
+						StaysOpen = false,
+						AllowsTransparency = true,
+						PlacementTarget = QuickSwitchButton,
+						Placement = PlacementMode.Bottom,
+					};
+
+					var outerBorder = new Border
+					{
+						Background = bgBrush,
+						BorderBrush = borderBrush,
+						BorderThickness = new Thickness(1),
+						Padding = new Thickness(8),
+					};
+
+					var grid = new Grid();
+					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+					for (int i = 0; i < 4; i++)
+						grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+					var headerMargin = new Thickness(4, 2, 4, 6);
+
+					var hModel = new TextBlock { Text = "Model", Foreground = fgBrush, Margin = headerMargin, FontWeight = FontWeights.Bold };
+					Grid.SetRow(hModel, 0); Grid.SetColumn(hModel, 1);
+					grid.Children.Add(hModel);
+
+					var hThinking = new TextBlock { Text = "Thinking", Foreground = fgBrush, Margin = headerMargin, FontWeight = FontWeights.Bold };
+					Grid.SetRow(hThinking, 0); Grid.SetColumn(hThinking, 2);
+					grid.Children.Add(hThinking);
+
+					string[] models = { "Opus 4.6", "Sonnet 4.5", "Haiku 4.5" };
+					string[] efforts = { "Low", "Medium", "High" };
+					int[] defaultModelIndices = { 0, 1, 2 };
+
+					for (int row = 0; row < 3; row++)
+					{
+						int rowIndex = row + 1;
+						var cellMargin = new Thickness(4, 2, 4, 2);
+
+						var modelCombo = new ComboBox { Margin = cellMargin, MinWidth = 100 };
+						foreach (var m in models)
+							modelCombo.Items.Add(m);
+						modelCombo.SelectedIndex = defaultModelIndices[row];
+
+						var thinkingCheck = new CheckBox
 						{
-							bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
-						});
-						if (bufferText != null)
+							Margin = cellMargin,
+							VerticalAlignment = VerticalAlignment.Center,
+							HorizontalAlignment = HorizontalAlignment.Center
+						};
+
+						var effortCombo = new ComboBox { Margin = cellMargin, MinWidth = 80 };
+						foreach (var ef in efforts)
+							effortCombo.Items.Add(ef);
+						effortCombo.SelectedIndex = 0;
+						effortCombo.Visibility = modelCombo.SelectedIndex == 0 ? Visibility.Visible : Visibility.Hidden;
+
+						var capturedEffortCombo = effortCombo;
+						var capturedModelCombo = modelCombo;
+						modelCombo.SelectionChanged += (s, ev) =>
 						{
-							int iEffort = -1;
-							var lines = bufferText.Split('\n');
-							for (int li = lines.Length - 1; li >= 0; li--)
-							{
-								var line = lines[li];
-								int idx1 = line.IndexOf(" effort ");
-								int idx2 = line.IndexOf(" ← → to adjust");
-								if (idx1 > 0 && idx2 > 0)
-								{
-									string before = line.Substring(0, idx1).TrimEnd();
-									int lastSpace = before.LastIndexOf(' ');
-									string word = lastSpace >= 0 ? before.Substring(lastSpace + 1) : before;
-									if (word == "Low" || word == "Medium" || word == "High")
-									{
-										if (word == "Low")
-											iEffort = 0;
-										else if (word == "Medium")
-											iEffort = 1;
-										else if (word == "High")
-											iEffort = 2;
-									}
-									break;
-								}
-							}
+							capturedEffortCombo.Visibility = capturedModelCombo.SelectedIndex == 0 ? Visibility.Visible : Visibility.Hidden;
+						};
 
-							int iTargetEffort = 0;
+						var capturedThinkingCheck = thinkingCheck;
+						var selectButton = new Button
+						{
+							Content = "▶",
+							Margin = cellMargin,
+							Padding = new Thickness(6, 2, 6, 2),
+							Cursor = Cursors.Hand,
+						};
+						selectButton.Click += (s, ev) =>
+						{
+							iTargetModel = capturedModelCombo.SelectedIndex;
+							bThinking = capturedThinkingCheck.IsChecked == true;
+							iTargetEffort = capturedEffortCombo.SelectedIndex;
+							popup.IsOpen = false;
 
-							if (iEffort >= 0 && iEffort != iTargetEffort)
+							var terminal = activeTab.Terminal;
+							System.Threading.Tasks.Task.Run(async () =>
 							{
-								int diff = iTargetEffort - iEffort;
-								string arrowKey = diff > 0 ? "\x1b[C" : "\x1b[D";
-								int steps = Math.Abs(diff);
-								for (int i = 0; i < steps; i++)
+								terminal.WriteInput("\x1bt");
+								await System.Threading.Tasks.Task.Delay(200);
+								terminal.WriteInput(bThinking ? "1" : "2");
+								await System.Threading.Tasks.Task.Delay(200);
+
+								terminal.WriteInput("/model");
+								await System.Threading.Tasks.Task.Delay(200);
+								terminal.WriteInput("\r");
+								await System.Threading.Tasks.Task.Delay(200);
+								terminal.WriteInput((iTargetModel + 1).ToString());
+
+								if (iTargetModel == 0)
 								{
 									await System.Threading.Tasks.Task.Delay(200);
-									terminal.WriteInput(arrowKey);
+									terminal.WriteInput("/model");
+									await System.Threading.Tasks.Task.Delay(200);
+									terminal.WriteInput("\r");
+
+									await System.Threading.Tasks.Task.Delay(500);
+									string bufferText = null;
+									await Dispatcher.InvokeAsync(() =>
+									{
+										bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
+									});
+									if (bufferText != null)
+									{
+										int iEffort = -1;
+										var lines = bufferText.Split('\n');
+										for (int li = lines.Length - 1; li >= 0; li--)
+										{
+											var line = lines[li];
+											int idx1 = line.IndexOf(" effort ");
+											int idx2 = line.IndexOf(" \u2190 \u2192 to adjust");
+											if (idx1 > 0 && idx2 > 0)
+											{
+												string before = line.Substring(0, idx1).TrimEnd();
+												int lastSpace = before.LastIndexOf(' ');
+												string word = lastSpace >= 0 ? before.Substring(lastSpace + 1) : before;
+												if (word == "Low" || word == "Medium" || word == "High")
+												{
+													if (word == "Low")
+														iEffort = 0;
+													else if (word == "Medium")
+														iEffort = 1;
+													else if (word == "High")
+														iEffort = 2;
+												}
+												break;
+											}
+										}
+
+										if (iEffort >= 0 && iEffort != iTargetEffort)
+										{
+											int diff = iTargetEffort - iEffort;
+											string arrowKey = diff > 0 ? "\x1b[C" : "\x1b[D";
+											int steps = Math.Abs(diff);
+											for (int i = 0; i < steps; i++)
+											{
+												await System.Threading.Tasks.Task.Delay(200);
+												terminal.WriteInput(arrowKey);
+											}
+										}
+										await System.Threading.Tasks.Task.Delay(200);
+										terminal.WriteInput("\r");
+									}
 								}
-							}
-							await System.Threading.Tasks.Task.Delay(200);
-							terminal.WriteInput("\r");
-						}
-					});
+							});
+						};
+
+						Grid.SetRow(selectButton, rowIndex); Grid.SetColumn(selectButton, 0);
+						Grid.SetRow(modelCombo, rowIndex); Grid.SetColumn(modelCombo, 1);
+						Grid.SetRow(thinkingCheck, rowIndex); Grid.SetColumn(thinkingCheck, 2);
+						Grid.SetRow(effortCombo, rowIndex); Grid.SetColumn(effortCombo, 3);
+
+						grid.Children.Add(selectButton);
+						grid.Children.Add(modelCombo);
+						grid.Children.Add(thinkingCheck);
+						grid.Children.Add(effortCombo);
+					}
+
+					outerBorder.Child = grid;
+					popup.Child = outerBorder;
+					quickSwitchPopup = popup;
+					popup.IsOpen = true;
 				}
 			}
 			catch (Exception ex)
 			{
-				Debug.WriteLine($"Exception in MacrosButton_Click: {ex}");
+				Debug.WriteLine($"Exception in QuickSwitchButton_Click: {ex}");
 			}
 		}
 
@@ -1326,6 +1459,7 @@ namespace ClaudeVS
 				NewAgentButton.Style = (Style)FindResource("LightButtonStyle");
 				ThemeButton.Style = (Style)FindResource("LightButtonStyle");
 				FontSizeButton.Style = (Style)FindResource("LightButtonStyle");
+				QuickSwitchButton.Style = (Style)FindResource("LightButtonStyle");
 			}
 			else
 			{
@@ -1340,6 +1474,7 @@ namespace ClaudeVS
 				NewAgentButton.Style = (Style)FindResource("DarkButtonStyle");
 				ThemeButton.Style = (Style)FindResource("DarkButtonStyle");
 				FontSizeButton.Style = (Style)FindResource("DarkButtonStyle");
+				QuickSwitchButton.Style = (Style)FindResource("DarkButtonStyle");
 			}
 
 			ToolbarBorder.Background = toolbarBg;
@@ -1367,6 +1502,10 @@ namespace ClaudeVS
 			FontSizeButton.Background = buttonBg;
 			FontSizeButton.Foreground = buttonFg;
 			FontSizeButton.BorderBrush = buttonBorder;
+
+			QuickSwitchButton.Background = buttonBg;
+			QuickSwitchButton.Foreground = buttonFg;
+			QuickSwitchButton.BorderBrush = buttonBorder;
 
 			var tabItemStyle = (Style)FindResource(effectiveTheme == "Light" ? "LightTabItemStyle" : "DarkTabItemStyle");
 			var closeButtonStyle = (Style)FindResource(effectiveTheme == "Light" ? "LightTabCloseButtonStyle" : "DarkTabCloseButtonStyle");

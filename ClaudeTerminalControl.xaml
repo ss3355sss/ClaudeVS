@@ -367,7 +367,7 @@
                     Content="🔤 Font Size"
                     Padding="4,2"
                     FontSize="12"
-                    Margin="0"
+                    Margin="0,0,8,0"
                     HorizontalAlignment="Left"
                     Background="#1e1e1e"
                     Foreground="#d4d4d4"
@@ -378,8 +378,8 @@
                     Style="{StaticResource DarkButtonStyle}"
                     Click="FontSizeButton_Click"/>
 
-            <Button x:Name="MacrosButton"
-                    Content="⚡ Macros"
+            <Button x:Name="QuickSwitchButton"
+                    Content="⚡ QuickSwitch"
                     Padding="4,2"
                     FontSize="12"
                     Margin="0"
@@ -391,7 +391,7 @@
                     Focusable="False"
                     IsTabStop="False"
                     Style="{StaticResource DarkButtonStyle}"
-                    Click="MacrosButton_Click"/>
+                    Click="QuickSwitchButton_Click"/>
             </StackPanel>
         </Border>
 
