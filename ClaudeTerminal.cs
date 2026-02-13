@@ -215,7 +215,7 @@ namespace ClaudeVS
 
             if (alt && !ctrl)
             {
-                if (vk == 'V' || vk == 'T' || vk == 'S')
+                if (vk == 'V' || vk == 'T' || vk == 'S' || vk == '1' || vk == '2' || vk == '3')
                     return true;
             }
 

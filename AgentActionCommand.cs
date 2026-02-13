@@ -22,6 +22,9 @@ namespace ClaudeVS
         public const int AgentAction5Id = 0x0109;
         public const int AgentAction6Id = 0x010A;
         public const int AgentAction7Id = 0x010C;
+        public const int QuickSwitch1Id = 0x010D;
+        public const int QuickSwitch2Id = 0x010E;
+        public const int QuickSwitch3Id = 0x010F;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -54,6 +57,9 @@ namespace ClaudeVS
             AddCommand(commandService, AgentAction5Id);
             AddCommand(commandService, AgentAction6Id);
             AddCommand(commandService, AgentAction7Id);
+            AddCommand(commandService, QuickSwitch1Id);
+            AddCommand(commandService, QuickSwitch2Id);
+            AddCommand(commandService, QuickSwitch3Id);
         }
 
         private void AddCommand(OleMenuCommandService commandService, int commandId)
@@ -106,6 +112,16 @@ namespace ClaudeVS
             if (menuCommand == null) return;
 
             string inputToSend = null;
+
+            if (menuCommand.CommandID.ID >= QuickSwitch1Id && menuCommand.CommandID.ID <= QuickSwitch3Id)
+            {
+                int presetIndex = menuCommand.CommandID.ID - QuickSwitch1Id;
+                ToolWindowPane qsWindow = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
+                var qsTerminalWindow = qsWindow as ClaudeTerminal;
+                var control = qsTerminalWindow?.Content as ClaudeTerminalControl;
+                control?.ExecuteQuickSwitch(presetIndex);
+                return;
+            }
 
             if (menuCommand.CommandID.ID == AgentAction6Id)
             {

@@ -91,6 +91,9 @@ namespace ClaudeVS
 		private int iTargetModel;
 		private bool bThinking;
 		private int iTargetEffort;
+		private int[] quickSwitchPresetModel = { 0, 1, 2 };
+		private bool[] quickSwitchPresetThinking = { false, false, false };
+		private int[] quickSwitchPresetEffort = { 0, 0, 0 };
 		private bool eventsInitialized;
 
 		/// <summary>
@@ -1152,6 +1155,7 @@ namespace ClaudeVS
 
 					for (int row = 0; row < 3; row++)
 					{
+						int capturedRow = row;
 						int rowIndex = row + 1;
 						var cellMargin = new Thickness(4, 2, 4, 2);
 
@@ -1190,81 +1194,11 @@ namespace ClaudeVS
 						};
 						selectButton.Click += (s, ev) =>
 						{
-							iTargetModel = capturedModelCombo.SelectedIndex;
-							bThinking = capturedThinkingCheck.IsChecked == true;
-							iTargetEffort = capturedEffortCombo.SelectedIndex;
+							quickSwitchPresetModel[capturedRow] = capturedModelCombo.SelectedIndex;
+							quickSwitchPresetThinking[capturedRow] = capturedThinkingCheck.IsChecked == true;
+							quickSwitchPresetEffort[capturedRow] = capturedEffortCombo.SelectedIndex;
 							popup.IsOpen = false;
-
-							var terminal = activeTab.Terminal;
-							System.Threading.Tasks.Task.Run(async () =>
-							{
-								terminal.WriteInput("\x1bt");
-								await System.Threading.Tasks.Task.Delay(200);
-								terminal.WriteInput(bThinking ? "1" : "2");
-								await System.Threading.Tasks.Task.Delay(200);
-
-								terminal.WriteInput("/model");
-								await System.Threading.Tasks.Task.Delay(200);
-								terminal.WriteInput("\r");
-								await System.Threading.Tasks.Task.Delay(200);
-								terminal.WriteInput((iTargetModel + 1).ToString());
-
-								if (iTargetModel == 0)
-								{
-									await System.Threading.Tasks.Task.Delay(200);
-									terminal.WriteInput("/model");
-									await System.Threading.Tasks.Task.Delay(200);
-									terminal.WriteInput("\r");
-
-									await System.Threading.Tasks.Task.Delay(500);
-									string bufferText = null;
-									await Dispatcher.InvokeAsync(() =>
-									{
-										bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
-									});
-									if (bufferText != null)
-									{
-										int iEffort = -1;
-										var lines = bufferText.Split('\n');
-										for (int li = lines.Length - 1; li >= 0; li--)
-										{
-											var line = lines[li];
-											int idx1 = line.IndexOf(" effort ");
-											int idx2 = line.IndexOf(" \u2190 \u2192 to adjust");
-											if (idx1 > 0 && idx2 > 0)
-											{
-												string before = line.Substring(0, idx1).TrimEnd();
-												int lastSpace = before.LastIndexOf(' ');
-												string word = lastSpace >= 0 ? before.Substring(lastSpace + 1) : before;
-												if (word == "Low" || word == "Medium" || word == "High")
-												{
-													if (word == "Low")
-														iEffort = 0;
-													else if (word == "Medium")
-														iEffort = 1;
-													else if (word == "High")
-														iEffort = 2;
-												}
-												break;
-											}
-										}
-
-										if (iEffort >= 0 && iEffort != iTargetEffort)
-										{
-											int diff = iTargetEffort - iEffort;
-											string arrowKey = diff > 0 ? "\x1b[C" : "\x1b[D";
-											int steps = Math.Abs(diff);
-											for (int i = 0; i < steps; i++)
-											{
-												await System.Threading.Tasks.Task.Delay(200);
-												terminal.WriteInput(arrowKey);
-											}
-										}
-										await System.Threading.Tasks.Task.Delay(200);
-										terminal.WriteInput("\r");
-									}
-								}
-							});
+							ExecuteQuickSwitch(capturedRow);
 						};
 
 						Grid.SetRow(selectButton, rowIndex); Grid.SetColumn(selectButton, 0);
@@ -1288,6 +1222,87 @@ namespace ClaudeVS
 			{
 				Debug.WriteLine($"Exception in QuickSwitchButton_Click: {ex}");
 			}
+		}
+
+		public void ExecuteQuickSwitch(int presetIndex)
+		{
+			if (presetIndex < 0 || presetIndex > 2) return;
+			if (activeTab?.Terminal == null || !activeTab.Terminal.IsRunning) return;
+
+			iTargetModel = quickSwitchPresetModel[presetIndex];
+			bThinking = quickSwitchPresetThinking[presetIndex];
+			iTargetEffort = quickSwitchPresetEffort[presetIndex];
+
+			var terminal = activeTab.Terminal;
+			System.Threading.Tasks.Task.Run(async () =>
+			{
+				terminal.WriteInput("\x1bt");
+				await System.Threading.Tasks.Task.Delay(200);
+				terminal.WriteInput(bThinking ? "1" : "2");
+				await System.Threading.Tasks.Task.Delay(200);
+
+				terminal.WriteInput("/model");
+				await System.Threading.Tasks.Task.Delay(200);
+				terminal.WriteInput("\r");
+				await System.Threading.Tasks.Task.Delay(200);
+				terminal.WriteInput((iTargetModel + 1).ToString());
+
+				if (iTargetModel == 0)
+				{
+					await System.Threading.Tasks.Task.Delay(200);
+					terminal.WriteInput("/model");
+					await System.Threading.Tasks.Task.Delay(200);
+					terminal.WriteInput("\r");
+
+					await System.Threading.Tasks.Task.Delay(500);
+					string bufferText = null;
+					await Dispatcher.InvokeAsync(() =>
+					{
+						bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
+					});
+					if (bufferText != null)
+					{
+						int iEffort = -1;
+						var lines = bufferText.Split('\n');
+						for (int li = lines.Length - 1; li >= 0; li--)
+						{
+							var line = lines[li];
+							int idx1 = line.IndexOf(" effort ");
+							int idx2 = line.IndexOf(" \u2190 \u2192 to adjust");
+							if (idx1 > 0 && idx2 > 0)
+							{
+								string before = line.Substring(0, idx1).TrimEnd();
+								int lastSpace = before.LastIndexOf(' ');
+								string word = lastSpace >= 0 ? before.Substring(lastSpace + 1) : before;
+								if (word == "Low" || word == "Medium" || word == "High")
+								{
+									if (word == "Low")
+										iEffort = 0;
+									else if (word == "Medium")
+										iEffort = 1;
+									else if (word == "High")
+										iEffort = 2;
+								}
+								break;
+							}
+						}
+
+						if (iEffort >= 0 && iEffort != iTargetEffort)
+						{
+							int diff = iTargetEffort - iEffort;
+							string arrowKey = diff > 0 ? "\x1b[C" : "\x1b[D";
+							int steps = Math.Abs(diff);
+							for (int i = 0; i < steps; i++)
+							{
+								await System.Threading.Tasks.Task.Delay(200);
+								terminal.WriteInput(arrowKey);
+							}
+						}
+						await System.Threading.Tasks.Task.Delay(200);
+						terminal.WriteInput("\r");
+					}
+				}
+			});
 		}
 
 		private void ApplyFontSize(AgentTab tab)
