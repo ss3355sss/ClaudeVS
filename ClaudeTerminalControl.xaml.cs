@@ -1294,6 +1294,17 @@ namespace ClaudeVS
 				terminal.WriteInput(bThinking ? "1" : "2");
 				await System.Threading.Tasks.Task.Delay(200);
 
+				string thinkingBuffer = null;
+				await Dispatcher.InvokeAsync(() =>
+				{
+					thinkingBuffer = activeTab?.TerminalControl?.ReadEntireBuffer();
+				});
+				if (thinkingBuffer != null && thinkingBuffer.Contains("Do you want to proceed?"))
+				{
+					terminal.WriteInput("\r");
+					await System.Threading.Tasks.Task.Delay(200);
+				}
+
 				terminal.WriteInput("/model");
 				await System.Threading.Tasks.Task.Delay(200);
 				terminal.WriteInput("\r");
@@ -1307,7 +1318,7 @@ namespace ClaudeVS
 					await System.Threading.Tasks.Task.Delay(200);
 					terminal.WriteInput("\r");
 
-					await System.Threading.Tasks.Task.Delay(500);
+					await System.Threading.Tasks.Task.Delay(200);
 					string bufferText = null;
 					await Dispatcher.InvokeAsync(() =>
 					{
