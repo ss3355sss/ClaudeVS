@@ -1168,6 +1168,7 @@ namespace ClaudeVS
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+					grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
 					for (int i = 0; i < 5; i++)
 						grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -1181,6 +1182,41 @@ namespace ClaudeVS
 					var hThinking = new TextBlock { Text = "Thinking", Foreground = fgBrush, Margin = headerMargin, FontWeight = FontWeights.Bold };
 					Grid.SetRow(hThinking, 0); Grid.SetColumn(hThinking, 2);
 					grid.Children.Add(hThinking);
+
+					var hEffort = new TextBlock { Text = "Effort", Foreground = fgBrush, Margin = headerMargin, FontWeight = FontWeights.Bold };
+					Grid.SetRow(hEffort, 0); Grid.SetColumn(hEffort, 3);
+					grid.Children.Add(hEffort);
+
+					string[] quickSwitchCommandNames = {
+						"ClaudeVS.QuickSwitch1",
+						"ClaudeVS.QuickSwitch2",
+						"ClaudeVS.QuickSwitch3",
+						"ClaudeVS.QuickSwitch4"
+					};
+					string[] quickSwitchHotkeys = new string[4];
+					try
+					{
+						DTE2 localDte = dte ?? GetDTE();
+						if (localDte != null)
+						{
+							for (int i = 0; i < 4; i++)
+							{
+								try
+								{
+									var cmd = localDte.Commands.Item(quickSwitchCommandNames[i]);
+									var bindings = cmd.Bindings as object[];
+									if (bindings != null && bindings.Length > 0)
+									{
+										string b = bindings[0].ToString();
+										int idx = b.IndexOf("::");
+										quickSwitchHotkeys[i] = idx >= 0 ? b.Substring(idx + 2) : b;
+									}
+								}
+								catch { }
+							}
+						}
+					}
+					catch { }
 
 					string[] models = { "Opus 4.6", "Sonnet 4.5", "Haiku 4.5" };
 					string[] efforts = { "Low", "Medium", "High" };
@@ -1256,6 +1292,20 @@ namespace ClaudeVS
 						Grid.SetRow(modelCombo, rowIndex); Grid.SetColumn(modelCombo, 1);
 						Grid.SetRow(thinkingCheck, rowIndex); Grid.SetColumn(thinkingCheck, 2);
 						Grid.SetRow(effortCombo, rowIndex); Grid.SetColumn(effortCombo, 3);
+
+						if (!string.IsNullOrEmpty(quickSwitchHotkeys[capturedRow]))
+						{
+							var hotkeyLabel = new TextBlock
+							{
+								Text = quickSwitchHotkeys[capturedRow],
+								Foreground = fgBrush,
+								Margin = cellMargin,
+								VerticalAlignment = VerticalAlignment.Center,
+								Opacity = 0.6,
+							};
+							Grid.SetRow(hotkeyLabel, rowIndex); Grid.SetColumn(hotkeyLabel, 4);
+							grid.Children.Add(hotkeyLabel);
+						}
 
 						grid.Children.Add(selectButton);
 						grid.Children.Add(modelCombo);
