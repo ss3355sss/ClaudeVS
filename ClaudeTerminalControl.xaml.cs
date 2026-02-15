@@ -91,6 +91,7 @@ namespace ClaudeVS
 		private AgentTab activeTab;
 		private AgentTab lastUserSelectedTab;
 		private Popup quickSwitchPopup;
+		private bool quickSwitchInProgress;
 		private int iTargetModel;
 		private bool bThinking;
 		private int iTargetEffort;
@@ -1327,8 +1328,10 @@ namespace ClaudeVS
 
 		public void ExecuteQuickSwitch(int presetIndex)
 		{
+			if (quickSwitchInProgress) return;
 			if (presetIndex < 0 || presetIndex > 3) return;
 			if (activeTab?.Terminal == null || !activeTab.Terminal.IsRunning) return;
+			quickSwitchInProgress = true;
 
 			iTargetModel = quickSwitchPresetModel[presetIndex];
 			bThinking = quickSwitchPresetThinking[presetIndex];
@@ -1416,6 +1419,7 @@ namespace ClaudeVS
 						terminal.WriteInput("\r");
 					}
 				}
+				quickSwitchInProgress = false;
 			});
 		}
 
