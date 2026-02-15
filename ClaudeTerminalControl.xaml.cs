@@ -640,6 +640,17 @@ namespace ClaudeVS
 			InitializeConPtyTerminal(tab);
 		}
 
+		private bool IsClaudeAgent()
+		{
+			string cmd = activeTab?.Command ?? currentCommand;
+			return cmd != null && cmd.IndexOf("claude", StringComparison.OrdinalIgnoreCase) >= 0;
+		}
+
+		private void UpdateQuickSwitchVisibility()
+		{
+			QuickSwitchButton.Visibility = IsClaudeAgent() ? Visibility.Visible : Visibility.Collapsed;
+		}
+
 		private void SetActiveTab(AgentTab tab)
 		{
 			if (tab == null)
@@ -651,6 +662,7 @@ namespace ClaudeVS
 			lastUserSelectedTab = tab;
 			AgentTabs.SelectedItem = tab.TabItem;
 			EnsureTabInitialized(tab);
+			UpdateQuickSwitchVisibility();
 			FocusTerminal();
 		}
 
@@ -1048,6 +1060,7 @@ namespace ClaudeVS
 						activeTab.Command = newCommand;
 						currentCommand = newCommand;
 						SettingsManager.SaveLastCommand(currentCommand);
+						UpdateQuickSwitchVisibility();
 						activeTab.NeedsResizeAfterOutput = true;
 						string projectDir = GetActiveProjectDirectory();
 						if (!string.IsNullOrEmpty(projectDir))
@@ -1328,6 +1341,7 @@ namespace ClaudeVS
 
 		public void ExecuteQuickSwitch(int presetIndex)
 		{
+			if (!IsClaudeAgent()) return;
 			if (quickSwitchInProgress) return;
 			if (presetIndex < 0 || presetIndex > 3) return;
 			if (activeTab?.Terminal == null || !activeTab.Terminal.IsRunning) return;
