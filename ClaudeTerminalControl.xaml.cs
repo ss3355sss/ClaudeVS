@@ -1232,7 +1232,7 @@ namespace ClaudeVS
 					}
 					catch { }
 
-					string[] models = { "Opus 4.6", "Sonnet 4.5", "Haiku 4.5" };
+					string[] models = { "Opus 4.6", "Sonnet 4.6", "Haiku 4.5" };
 					string[] efforts = { "Low", "Medium", "High" };
 
 					for (int row = 0; row < 4; row++)
@@ -1372,11 +1372,10 @@ namespace ClaudeVS
 					await System.Threading.Tasks.Task.Delay(200);
 				}
 
-				terminal.WriteInput("/model");
+				string[] modelIds = { "claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5" };
+				terminal.WriteInput("/model " + modelIds[iTargetModel]);
 				await System.Threading.Tasks.Task.Delay(200);
 				terminal.WriteInput("\r");
-				await System.Threading.Tasks.Task.Delay(200);
-				terminal.WriteInput((iTargetModel + 1).ToString());
 
 				if (iTargetModel == 0)
 				{
