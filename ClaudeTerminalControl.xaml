@@ -378,7 +378,7 @@
                     Style="{StaticResource DarkButtonStyle}"
                     Click="FontSizeButton_Click"/>
 
-            <Button x:Name="QuickSwitchButton"
+            <!--<Button x:Name="QuickSwitchButton"
                     Content="⚡ QuickSwitch"
                     Padding="4,2"
                     FontSize="12"
@@ -391,7 +391,7 @@
                     Focusable="False"
                     IsTabStop="False"
                     Style="{StaticResource DarkButtonStyle}"
-                    Click="QuickSwitchButton_Click"/>
+                    Click="QuickSwitchButton_Click"/>-->
             </StackPanel>
         </Border>
 

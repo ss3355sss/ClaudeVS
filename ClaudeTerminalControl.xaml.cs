@@ -648,7 +648,7 @@ namespace ClaudeVS
 
 		private void UpdateQuickSwitchVisibility()
 		{
-			QuickSwitchButton.Visibility = IsClaudeAgent() ? Visibility.Visible : Visibility.Collapsed;
+			//QuickSwitchButton.Visibility = IsClaudeAgent() ? Visibility.Visible : Visibility.Collapsed;
 		}
 
 		private void SetActiveTab(AgentTab tab)
@@ -1165,7 +1165,7 @@ namespace ClaudeVS
 					{
 						StaysOpen = false,
 						AllowsTransparency = true,
-						PlacementTarget = QuickSwitchButton,
+						//PlacementTarget = QuickSwitchButton,
 						Placement = PlacementMode.Bottom,
 					};
 
@@ -1605,7 +1605,7 @@ namespace ClaudeVS
 				NewAgentButton.Style = (Style)FindResource("LightButtonStyle");
 				ThemeButton.Style = (Style)FindResource("LightButtonStyle");
 				FontSizeButton.Style = (Style)FindResource("LightButtonStyle");
-				QuickSwitchButton.Style = (Style)FindResource("LightButtonStyle");
+				//QuickSwitchButton.Style = (Style)FindResource("LightButtonStyle");
 			}
 			else
 			{
@@ -1620,7 +1620,7 @@ namespace ClaudeVS
 				NewAgentButton.Style = (Style)FindResource("DarkButtonStyle");
 				ThemeButton.Style = (Style)FindResource("DarkButtonStyle");
 				FontSizeButton.Style = (Style)FindResource("DarkButtonStyle");
-				QuickSwitchButton.Style = (Style)FindResource("DarkButtonStyle");
+				//QuickSwitchButton.Style = (Style)FindResource("DarkButtonStyle");
 			}
 
 			ToolbarBorder.Background = toolbarBg;
@@ -1649,9 +1649,9 @@ namespace ClaudeVS
 			FontSizeButton.Foreground = buttonFg;
 			FontSizeButton.BorderBrush = buttonBorder;
 
-			QuickSwitchButton.Background = buttonBg;
-			QuickSwitchButton.Foreground = buttonFg;
-			QuickSwitchButton.BorderBrush = buttonBorder;
+			//QuickSwitchButton.Background = buttonBg;
+			//QuickSwitchButton.Foreground = buttonFg;
+			//QuickSwitchButton.BorderBrush = buttonBorder;
 
 			var tabItemStyle = (Style)FindResource(effectiveTheme == "Light" ? "LightTabItemStyle" : "DarkTabItemStyle");
 			var closeButtonStyle = (Style)FindResource(effectiveTheme == "Light" ? "LightTabCloseButtonStyle" : "DarkTabCloseButtonStyle");
