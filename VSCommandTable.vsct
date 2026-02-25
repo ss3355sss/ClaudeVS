@@ -93,6 +93,14 @@
           <LocCanonicalName>.ClaudeVS.AgentAction7</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction8CommandId" priority="0x0111" type="Button">
+        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Agent Action 8</ButtonText>
+          <LocCanonicalName>.ClaudeVS.AgentAction8</LocCanonicalName>
+        </Strings>
+      </Button>
       <Button guid="guidClaudeVSPackageCmdSet" id="SpeechCommandId" priority="0x010C" type="Button">
         <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
         <CommandFlag>CommandWellOnly</CommandFlag>
@@ -148,6 +156,7 @@
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction5CommandId" editor="guidClaudeTerminal" key1="V" mod1="Alt" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction6CommandId" editor="guidClaudeTerminal" key1="V" mod1="Control" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction7CommandId" editor="guidClaudeTerminal" key1="T" mod1="Alt" />
+    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction8CommandId" editor="guidClaudeTerminal" key1="F" mod1="Control" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="SpeechCommandId" editor="guidClaudeTerminal" key1="S" mod1="Alt" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch1CommandId" editor="guidClaudeTerminal" key1="1" mod1="Alt" />
     <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch2CommandId" editor="guidClaudeTerminal" key1="2" mod1="Alt" />
@@ -177,6 +186,7 @@
       <IDSymbol name="QuickSwitch2CommandId" value="0x010E" />
       <IDSymbol name="QuickSwitch3CommandId" value="0x010F" />
       <IDSymbol name="QuickSwitch4CommandId" value="0x0110" />
+      <IDSymbol name="AgentAction8CommandId" value="0x0111" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{d8f1a2b3-4c5e-6f7a-8b9c-0d1e2f3a4b5c}" >

@@ -25,6 +25,7 @@ namespace ClaudeVS
         public const int QuickSwitch1Id = 0x010D;
         public const int QuickSwitch2Id = 0x010E;
         public const int QuickSwitch3Id = 0x010F;
+        public const int AgentAction8Id = 0x0111;
         public const int QuickSwitch4Id = 0x0110;
 
         /// <summary>
@@ -58,6 +59,7 @@ namespace ClaudeVS
             AddCommand(commandService, AgentAction5Id);
             AddCommand(commandService, AgentAction6Id);
             AddCommand(commandService, AgentAction7Id);
+            AddCommand(commandService, AgentAction8Id);
             AddCommand(commandService, QuickSwitch1Id);
             AddCommand(commandService, QuickSwitch2Id);
             AddCommand(commandService, QuickSwitch3Id);
@@ -190,6 +192,7 @@ namespace ClaudeVS
                 case AgentAction5Id: suffix = "AgentAction5"; break;
                 case AgentAction6Id: suffix = "AgentAction6"; break;
                 case AgentAction7Id: suffix = "AgentAction7"; break;
+                case AgentAction8Id: suffix = "AgentAction8"; break;
                 default:
                     Debug.WriteLine($"AgentActionCommand: Unknown command ID {commandId}");
                     return null;
