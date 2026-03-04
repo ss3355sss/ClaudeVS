@@ -1,4 +1,4 @@
-namespace ClaudeVS
+﻿namespace ClaudeVS
 {
 	using System;
 	using System.Collections.Generic;
@@ -267,7 +267,9 @@ namespace ClaudeVS
 				{
 					double charHeight = currentFontSize * 1.2;
 
-					uint columns = 120;
+					double charWidth = currentFontSize * 0.75;
+
+					uint columns = (uint)Math.Max(1, activeTab.TerminalControl.ActualWidth / charWidth);
 					uint rows = (uint)Math.Max(1, activeTab.TerminalControl.ActualHeight / charHeight);
 
 					terminalConnection.Resize(rows, columns);
@@ -664,6 +666,25 @@ namespace ClaudeVS
 			EnsureTabInitialized(tab);
 			UpdateQuickSwitchVisibility();
 			FocusTerminal();
+		}
+
+		public void SwitchToTab(int index)
+		{
+			if (index >= 0 && index < agentTabs.Count)
+				SetActiveTab(agentTabs[index]);
+		}
+
+		public void NewAgent()
+		{
+			try
+			{
+				var tab = CreateNewAgentTab(true);
+				SetActiveTab(tab);
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Exception in NewAgent: {ex}");
+			}
 		}
 
 		private AgentTab GetTabByItem(object item)
@@ -1361,77 +1382,14 @@ namespace ClaudeVS
 				terminal.WriteInput(bThinking ? "1" : "2");
 				await System.Threading.Tasks.Task.Delay(200);
 
-				string thinkingBuffer = null;
-				await Dispatcher.InvokeAsync(() =>
-				{
-					thinkingBuffer = activeTab?.TerminalControl?.ReadEntireBuffer();
-				});
-				if (thinkingBuffer != null && thinkingBuffer.Contains("Do you want to proceed?"))
-				{
-					terminal.WriteInput("\r");
-					await System.Threading.Tasks.Task.Delay(200);
-				}
+				terminal.WriteInput("\r");
+				await System.Threading.Tasks.Task.Delay(200);
 
 				string[] modelIds = { "claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5" };
 				terminal.WriteInput("/model " + modelIds[iTargetModel]);
 				await System.Threading.Tasks.Task.Delay(200);
 				terminal.WriteInput("\r");
 
-				if (iTargetModel == 0)
-				{
-					await System.Threading.Tasks.Task.Delay(200);
-					terminal.WriteInput("/model");
-					await System.Threading.Tasks.Task.Delay(200);
-					terminal.WriteInput("\r");
-
-					await System.Threading.Tasks.Task.Delay(200);
-					string bufferText = null;
-					await Dispatcher.InvokeAsync(() =>
-					{
-						bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
-					});
-					if (bufferText != null)
-					{
-						int iEffort = -1;
-						var lines = bufferText.Split('\n');
-						for (int li = lines.Length - 1; li >= 0; li--)
-						{
-							var line = lines[li];
-							int idx1 = line.IndexOf(" effort ");
-							int idx2 = line.IndexOf(" \u2190 \u2192 to adjust");
-							if (idx1 > 0 && idx2 > 0)
-							{
-								string before = line.Substring(0, idx1).TrimEnd();
-								int lastSpace = before.LastIndexOf(' ');
-								string word = lastSpace >= 0 ? before.Substring(lastSpace + 1) : before;
-								if (word == "Low" || word == "Medium" || word == "High")
-								{
-									if (word == "Low")
-										iEffort = 0;
-									else if (word == "Medium")
-										iEffort = 1;
-									else if (word == "High")
-										iEffort = 2;
-								}
-								break;
-							}
-						}
-
-						if (iEffort >= 0 && iEffort != iTargetEffort)
-						{
-							int diff = iTargetEffort - iEffort;
-							string arrowKey = diff > 0 ? "\x1b[C" : "\x1b[D";
-							int steps = Math.Abs(diff);
-							for (int i = 0; i < steps; i++)
-							{
-								await System.Threading.Tasks.Task.Delay(200);
-								terminal.WriteInput(arrowKey);
-							}
-						}
-						await System.Threading.Tasks.Task.Delay(200);
-						terminal.WriteInput("\r");
-					}
-				}
 				quickSwitchInProgress = false;
 			});
 		}
@@ -1472,27 +1430,11 @@ namespace ClaudeVS
 
 		private void UpdateTerminalMaxWidth(AgentTab tab)
 		{
-			// typically, it's +80 Width per font size but there's a trap at 16 where it's +3 compared to 14 and so requires + (3 * 80) instead of + (2 * 80)
-			if (currentFontSize == 8)
-				tab.TerminalBorder.Width = 740.0;
-			else if (currentFontSize == 9)
-				tab.TerminalBorder.Width = 820.0;
-			else if (currentFontSize == 10)
-				tab.TerminalBorder.Width = 900.0;
-			else if (currentFontSize == 11)
-				tab.TerminalBorder.Width = 980.0;
-			else if (currentFontSize == 12)
-				tab.TerminalBorder.Width = 1060.0;
-			else if (currentFontSize == 14)
-				tab.TerminalBorder.Width = 1220.0;
-			else if (currentFontSize == 16)
-				tab.TerminalBorder.Width = 1460.0;
-			else if (currentFontSize == 18)
-				tab.TerminalBorder.Width = 1620.0;
-			else if (currentFontSize == 20)
-				tab.TerminalBorder.Width = 1780.0;
-			else if (currentFontSize == 24)
-				tab.TerminalBorder.Width = 2100.0;
+			double availableWidth = this.ActualWidth;
+			if (availableWidth > 0)
+				tab.TerminalBorder.Width = availableWidth;
+			else
+				tab.TerminalBorder.Width = currentFontSize * 0.75 * 120;
 		}
 
 		private void ThemeButton_Click(object sender, RoutedEventArgs e)

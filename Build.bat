@@ -1,1 +1,1 @@
-cmd /c "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" ClaudeVS.csproj -t:Build -p:Configuration=Debug -v:minimal
+cmd /c "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe" ClaudeVS.csproj -t:Build -p:Configuration=Release -v:minimal

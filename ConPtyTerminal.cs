@@ -601,7 +601,6 @@ namespace ClaudeVS
 		{
 			try
 			{
-				columns = 120;
 
 				if (!IsRunning || pseudoConsoleHandle == IntPtr.Zero)
 				{

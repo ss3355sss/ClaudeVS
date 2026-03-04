@@ -16,6 +16,7 @@
     <RootNamespace>ClaudeVS</RootNamespace>
     <AssemblyName>ClaudeVS</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <RuntimeIdentifiers>win;win-x64</RuntimeIdentifiers>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
@@ -108,13 +109,13 @@
     <Content Include="Resources\ClaudeVS_128.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="..\terminal\bin\x64\Debug\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll" Condition="'$(Configuration)' == 'Debug'">
+    <Content Include="Lib\Microsoft.Terminal.Control.Debug.dll" Condition="'$(Configuration)' == 'Debug'">
       <IncludeInVSIX>true</IncludeInVSIX>
       <Link>Microsoft.Terminal.Control.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
     </Content>
-    <Content Include="..\terminal\bin\x64\Release\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll" Condition="'$(Configuration)' == 'Release'">
+    <Content Include="Lib\Microsoft.Terminal.Control.Release.dll" Condition="'$(Configuration)' == 'Release'">
       <IncludeInVSIX>true</IncludeInVSIX>
       <Link>Microsoft.Terminal.Control.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -137,12 +138,8 @@
     <Reference Include="System.Xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Terminal.Wpf" Condition="'$(Configuration)' == 'Debug'">
-      <HintPath>..\terminal\bin\AnyCPU\Debug\WpfTerminalControl\net472\Microsoft.Terminal.Wpf.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Microsoft.Terminal.Wpf" Condition="'$(Configuration)' == 'Release'">
-      <HintPath>..\terminal\bin\AnyCPU\Release\WpfTerminalControl\net472\Microsoft.Terminal.Wpf.dll</HintPath>
+    <Reference Include="Microsoft.Terminal.Wpf">
+      <HintPath>Lib\Microsoft.Terminal.Wpf.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.755" />

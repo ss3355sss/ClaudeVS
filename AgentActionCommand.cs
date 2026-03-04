@@ -27,6 +27,7 @@ namespace ClaudeVS
         public const int QuickSwitch3Id = 0x010F;
         public const int AgentAction8Id = 0x0111;
         public const int QuickSwitch4Id = 0x0110;
+        public const int NewAgentId = 0x0112;
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -64,6 +65,7 @@ namespace ClaudeVS
             AddCommand(commandService, QuickSwitch2Id);
             AddCommand(commandService, QuickSwitch3Id);
             AddCommand(commandService, QuickSwitch4Id);
+            AddCommand(commandService, NewAgentId);
         }
 
         private void AddCommand(OleMenuCommandService commandService, int commandId)
@@ -117,13 +119,22 @@ namespace ClaudeVS
 
             string inputToSend = null;
 
+            if (menuCommand.CommandID.ID == NewAgentId)
+            {
+                ToolWindowPane naWindow = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
+                var naTerminalWindow = naWindow as ClaudeTerminal;
+                var control = naTerminalWindow?.Content as ClaudeTerminalControl;
+                control?.NewAgent();
+                return;
+            }
+
             if (menuCommand.CommandID.ID >= QuickSwitch1Id && menuCommand.CommandID.ID <= QuickSwitch4Id)
             {
-                int presetIndex = menuCommand.CommandID.ID - QuickSwitch1Id;
+                int tabIndex = menuCommand.CommandID.ID - QuickSwitch1Id;
                 ToolWindowPane qsWindow = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, false);
                 var qsTerminalWindow = qsWindow as ClaudeTerminal;
                 var control = qsTerminalWindow?.Content as ClaudeTerminalControl;
-                control?.ExecuteQuickSwitch(presetIndex);
+                control?.SwitchToTab(tabIndex);
                 return;
             }
 
