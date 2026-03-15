@@ -648,7 +648,7 @@ namespace ClaudeVS
 
 		private void UpdateQuickSwitchVisibility()
 		{
-			//QuickSwitchButton.Visibility = IsClaudeAgent() ? Visibility.Visible : Visibility.Collapsed;
+			QuickSwitchButton.Visibility = IsClaudeAgent() ? Visibility.Visible : Visibility.Collapsed;
 		}
 
 		private void SetActiveTab(AgentTab tab)
@@ -1165,7 +1165,7 @@ namespace ClaudeVS
 					{
 						StaysOpen = false,
 						AllowsTransparency = true,
-						//PlacementTarget = QuickSwitchButton,
+						PlacementTarget = QuickSwitchButton,
 						Placement = PlacementMode.Bottom,
 					};
 
@@ -1233,7 +1233,7 @@ namespace ClaudeVS
 					catch { }
 
 					string[] models = { "Opus 4.6", "Sonnet 4.6", "Haiku 4.5" };
-					string[] efforts = { "Low", "Medium", "High" };
+					string[] efforts = { "Low", "Medium", "High", "Max", "Auto" };
 
 					for (int row = 0; row < 4; row++)
 					{
@@ -1379,58 +1379,21 @@ namespace ClaudeVS
 
 				if (iTargetModel == 0)
 				{
-					await System.Threading.Tasks.Task.Delay(200);
-					terminal.WriteInput("/model");
+					string[] effortLevels = { "low", "medium", "high", "max", "auto" };
+					for (int wait = 0; wait < 50; wait++)
+					{
+						await System.Threading.Tasks.Task.Delay(200);
+						string buf = null;
+						await Dispatcher.InvokeAsync(() =>
+						{
+							buf = activeTab?.TerminalControl?.ReadEntireBuffer();
+						});
+						if (buf != null && buf.Contains("─────\r\n> \r\n─────") && buf.Contains("⎿  Set model to "))
+							break;
+					}
+					terminal.WriteInput("/effort " + effortLevels[iTargetEffort]);
 					await System.Threading.Tasks.Task.Delay(200);
 					terminal.WriteInput("\r");
-
-					await System.Threading.Tasks.Task.Delay(200);
-					string bufferText = null;
-					await Dispatcher.InvokeAsync(() =>
-					{
-						bufferText = activeTab?.TerminalControl?.ReadEntireBuffer();
-					});
-					if (bufferText != null)
-					{
-						int iEffort = -1;
-						var lines = bufferText.Split('\n');
-						for (int li = lines.Length - 1; li >= 0; li--)
-						{
-							var line = lines[li];
-							int idx1 = line.IndexOf(" effort ");
-							int idx2 = line.IndexOf(" \u2190 \u2192 to adjust");
-							if (idx1 > 0 && idx2 > 0)
-							{
-								string before = line.Substring(0, idx1).TrimEnd();
-								int lastSpace = before.LastIndexOf(' ');
-								string word = lastSpace >= 0 ? before.Substring(lastSpace + 1) : before;
-								if (word == "Low" || word == "Medium" || word == "High")
-								{
-									if (word == "Low")
-										iEffort = 0;
-									else if (word == "Medium")
-										iEffort = 1;
-									else if (word == "High")
-										iEffort = 2;
-								}
-								break;
-							}
-						}
-
-						if (iEffort >= 0 && iEffort != iTargetEffort)
-						{
-							int diff = iTargetEffort - iEffort;
-							string arrowKey = diff > 0 ? "\x1b[C" : "\x1b[D";
-							int steps = Math.Abs(diff);
-							for (int i = 0; i < steps; i++)
-							{
-								await System.Threading.Tasks.Task.Delay(200);
-								terminal.WriteInput(arrowKey);
-							}
-						}
-						await System.Threading.Tasks.Task.Delay(200);
-						terminal.WriteInput("\r");
-					}
 				}
 				quickSwitchInProgress = false;
 			});
@@ -1605,7 +1568,7 @@ namespace ClaudeVS
 				NewAgentButton.Style = (Style)FindResource("LightButtonStyle");
 				ThemeButton.Style = (Style)FindResource("LightButtonStyle");
 				FontSizeButton.Style = (Style)FindResource("LightButtonStyle");
-				//QuickSwitchButton.Style = (Style)FindResource("LightButtonStyle");
+				QuickSwitchButton.Style = (Style)FindResource("LightButtonStyle");
 			}
 			else
 			{
@@ -1620,7 +1583,7 @@ namespace ClaudeVS
 				NewAgentButton.Style = (Style)FindResource("DarkButtonStyle");
 				ThemeButton.Style = (Style)FindResource("DarkButtonStyle");
 				FontSizeButton.Style = (Style)FindResource("DarkButtonStyle");
-				//QuickSwitchButton.Style = (Style)FindResource("DarkButtonStyle");
+				QuickSwitchButton.Style = (Style)FindResource("DarkButtonStyle");
 			}
 
 			ToolbarBorder.Background = toolbarBg;
@@ -1649,9 +1612,9 @@ namespace ClaudeVS
 			FontSizeButton.Foreground = buttonFg;
 			FontSizeButton.BorderBrush = buttonBorder;
 
-			//QuickSwitchButton.Background = buttonBg;
-			//QuickSwitchButton.Foreground = buttonFg;
-			//QuickSwitchButton.BorderBrush = buttonBorder;
+			QuickSwitchButton.Background = buttonBg;
+			QuickSwitchButton.Foreground = buttonFg;
+			QuickSwitchButton.BorderBrush = buttonBorder;
 
 			var tabItemStyle = (Style)FindResource(effectiveTheme == "Light" ? "LightTabItemStyle" : "DarkTabItemStyle");
 			var closeButtonStyle = (Style)FindResource(effectiveTheme == "Light" ? "LightTabCloseButtonStyle" : "DarkTabCloseButtonStyle");
