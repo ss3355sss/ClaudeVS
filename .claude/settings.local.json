@@ -26,7 +26,9 @@
       "Bash(unzip:*)",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\temp\\build-terminal-control-release-x64.ps1\")",
       "WebFetch(domain:gist.github.com)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(c:/work/terminal/build_wpf.bat Release)",
+      "Bash(\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35222/bin/Hostx64/x64/dumpbin.exe\" /exports \"c:\\\\work\\\\terminal\\\\bin\\\\x64\\\\Debug\\\\Microsoft.Terminal.Control\\\\Microsoft.Terminal.Control.dll\")"
     ],
     "deny": [],
     "ask": []
