@@ -1,5 +1,7 @@
 # ClaudeVS: Claude Code in Visual Studio
 
+[Available on the Visual Studio Marketplace for free](https://marketplace.visualstudio.com/items?itemName=GlassBeaver.ClaudeVS)
+
 **Use top AI coding CLIs directly inside Visual Studio.**
 
 ClaudeVS integrates **Claude Code CLI, Copilot CLI, Codex CLI, and Gemini CLI** into Visual Studio 2022 and 2026, so you can work with your preferred agent without leaving the IDE.
