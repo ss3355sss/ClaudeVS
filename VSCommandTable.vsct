@@ -12,195 +12,28 @@
     </Groups>
 
     <Buttons>
-      <Button guid="guidClaudeVSPackageCmdSet" id="ClaudeTerminalCommandId" priority="0x0101" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <Icon guid="guidImages" id="bmpPic1" />
-        <Strings>
-          <ButtonText>ClaudeVS</ButtonText>
-        </Strings>
-      </Button>
       <Button guid="guidClaudeVSPackageCmdSet" id="SendFileLocationCommandId" priority="0x0102" type="Button">
         <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
         <Strings>
-          <ButtonText>Send Location to Agent</ButtonText>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="SendCommentLineCommandId" priority="0x0103" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <Strings>
-          <ButtonText>Send Task to Agent</ButtonText>
+          <ButtonText>Send Location to Terminal</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidClaudeVSPackageCmdSet" id="SendDebuggerExceptionCommandId" priority="0x0104" type="Button">
         <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
         <Strings>
-          <ButtonText>Send Exception to Agent</ButtonText>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction1CommandId" priority="0x0105" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 1</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction1</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction2CommandId" priority="0x0106" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 2</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction2</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction3CommandId" priority="0x0107" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 3</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction3</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction4CommandId" priority="0x0108" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 4</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction4</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction5CommandId" priority="0x0109" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 5</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction5</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction6CommandId" priority="0x010A" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 6</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction6</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction7CommandId" priority="0x010B" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 7</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction7</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="AgentAction8CommandId" priority="0x0111" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Agent Action 8</ButtonText>
-          <LocCanonicalName>.ClaudeVS.AgentAction8</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="SpeechCommandId" priority="0x010C" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Toggle Speech Input</ButtonText>
-          <LocCanonicalName>.ClaudeVS.SpeechCommand</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="QuickSwitch1CommandId" priority="0x010D" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Quick Switch Preset 1</ButtonText>
-          <LocCanonicalName>.ClaudeVS.QuickSwitch1</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="QuickSwitch2CommandId" priority="0x010E" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Quick Switch Preset 2</ButtonText>
-          <LocCanonicalName>.ClaudeVS.QuickSwitch2</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="QuickSwitch3CommandId" priority="0x010F" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Quick Switch Preset 3</ButtonText>
-          <LocCanonicalName>.ClaudeVS.QuickSwitch3</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="QuickSwitch4CommandId" priority="0x0110" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>Quick Switch Preset 4</ButtonText>
-          <LocCanonicalName>.ClaudeVS.QuickSwitch4</LocCanonicalName>
-        </Strings>
-      </Button>
-      <Button guid="guidClaudeVSPackageCmdSet" id="NewAgentCommandId" priority="0x0112" type="Button">
-        <Parent guid="guidClaudeVSPackageCmdSet" id="ClaudeMenuGroup" />
-        <CommandFlag>CommandWellOnly</CommandFlag>
-        <Strings>
-          <ButtonText>New Agent</ButtonText>
-          <LocCanonicalName>.ClaudeVS.NewAgent</LocCanonicalName>
+          <ButtonText>Send Exception to Terminal</ButtonText>
         </Strings>
       </Button>
     </Buttons>
-
-    <Bitmaps>
-      <Bitmap guid="guidImages" href="Resources\ClaudeVS_16.png" usedList="bmpPic1"/>
-    </Bitmaps>
   </Commands>
-
-  <KeyBindings>
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction1CommandId" editor="guidClaudeTerminal" key1="T" mod1="Control" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction2CommandId" editor="guidClaudeTerminal" key1="R" mod1="Control" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction3CommandId" editor="guidClaudeTerminal" key1="O" mod1="Control" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction4CommandId" editor="guidClaudeTerminal" key1="B" mod1="Control" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction5CommandId" editor="guidClaudeTerminal" key1="V" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction6CommandId" editor="guidClaudeTerminal" key1="V" mod1="Control" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction7CommandId" editor="guidClaudeTerminal" key1="T" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="AgentAction8CommandId" editor="guidClaudeTerminal" key1="F" mod1="Control" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="SpeechCommandId" editor="guidClaudeTerminal" key1="S" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch1CommandId" editor="guidClaudeTerminal" key1="1" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch2CommandId" editor="guidClaudeTerminal" key1="2" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch3CommandId" editor="guidClaudeTerminal" key1="3" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="QuickSwitch4CommandId" editor="guidClaudeTerminal" key1="4" mod1="Alt" />
-    <KeyBinding guid="guidClaudeVSPackageCmdSet" id="NewAgentCommandId" editor="guidClaudeTerminal" key1="T" mod1="Control Alt" />
-  </KeyBindings>
 
   <Symbols>
     <GuidSymbol name="guidClaudeVSPackage" value="{b7d90b76-b34d-46e0-ab4f-888666287245}" />
-    <GuidSymbol name="guidClaudeTerminal" value="{f4c7b9e2-3a5d-6c8f-1b2e-4a9d7c5f3e8b}" />
 
     <GuidSymbol name="guidClaudeVSPackageCmdSet" value="{a7c8e9d0-1234-5678-9abc-def012345678}">
       <IDSymbol name="ClaudeMenuGroup" value="0x1020" />
-      <IDSymbol name="ClaudeTerminalCommandId" value="0x0101" />
       <IDSymbol name="SendFileLocationCommandId" value="0x0102" />
-      <IDSymbol name="SendCommentLineCommandId" value="0x0103" />
       <IDSymbol name="SendDebuggerExceptionCommandId" value="0x0104" />
-      <IDSymbol name="AgentAction1CommandId" value="0x0105" />
-      <IDSymbol name="AgentAction2CommandId" value="0x0106" />
-      <IDSymbol name="AgentAction3CommandId" value="0x0107" />
-      <IDSymbol name="AgentAction4CommandId" value="0x0108" />
-      <IDSymbol name="AgentAction5CommandId" value="0x0109" />
-      <IDSymbol name="AgentAction6CommandId" value="0x010A" />
-      <IDSymbol name="SpeechCommandId" value="0x010B" />
-      <IDSymbol name="AgentAction7CommandId" value="0x010C" />
-      <IDSymbol name="QuickSwitch1CommandId" value="0x010D" />
-      <IDSymbol name="QuickSwitch2CommandId" value="0x010E" />
-      <IDSymbol name="QuickSwitch3CommandId" value="0x010F" />
-      <IDSymbol name="QuickSwitch4CommandId" value="0x0110" />
-      <IDSymbol name="AgentAction8CommandId" value="0x0111" />
-      <IDSymbol name="NewAgentCommandId" value="0x0112" />
-    </GuidSymbol>
-
-    <GuidSymbol name="guidImages" value="{d8f1a2b3-4c5e-6f7a-8b9c-0d1e2f3a4b5c}" >
-      <IDSymbol name="bmpPic1" value="1" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

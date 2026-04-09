@@ -4,6 +4,7 @@ namespace ClaudeVS
     using System.ComponentModel.Design;
     using System.Diagnostics;
     using System.IO;
+    using System.Windows;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Shell;
@@ -56,6 +57,37 @@ namespace ClaudeVS
             Instance = new SendFileLocationCommand(package, commandService);
         }
 
+        public static string BuildLocationMessage(DTE2 dte)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (dte == null || dte.ActiveDocument == null)
+                return null;
+
+            string filePath = dte.ActiveDocument.FullName;
+            if (string.IsNullOrEmpty(filePath))
+                return null;
+
+            TextSelection selection = dte.ActiveDocument.Selection as TextSelection;
+            int lineNumber = selection?.CurrentLine ?? 1;
+            string selectedText = selection?.Text;
+
+            string solutionDir = null;
+            if (dte.Solution != null && !string.IsNullOrEmpty(dte.Solution.FullName))
+                solutionDir = Path.GetDirectoryName(dte.Solution.FullName);
+
+            string relativePath = filePath;
+            if (!string.IsNullOrEmpty(solutionDir) && filePath.StartsWith(solutionDir, StringComparison.OrdinalIgnoreCase))
+                relativePath = filePath.Substring(solutionDir.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            string message = $"@{relativePath} line {lineNumber}";
+            if (!string.IsNullOrEmpty(selectedText))
+                message += $"\n{selectedText}";
+            message += "\n\n";
+
+            return message;
+        }
+
         private void Execute(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -63,51 +95,17 @@ namespace ClaudeVS
             try
             {
                 DTE2 dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
-                if (dte == null || dte.ActiveDocument == null)
-                {
+                string message = BuildLocationMessage(dte);
+                if (message == null)
                     return;
-                }
 
-                string filePath = dte.ActiveDocument.FullName;
-                if (string.IsNullOrEmpty(filePath))
-                {
-                    return;
-                }
+                Clipboard.SetText(message.Replace("\r\n", "\n"));
 
-                TextSelection selection = dte.ActiveDocument.Selection as TextSelection;
-                int lineNumber = selection?.CurrentLine ?? 1;
-                string selectedText = selection?.Text;
+                try { dte.ExecuteCommand("View.Terminal"); }
+                catch (Exception ex2) { Debug.WriteLine($"Failed to open VS terminal: {ex2.Message}"); }
 
-                string solutionDir = null;
-                if (dte.Solution != null && !string.IsNullOrEmpty(dte.Solution.FullName))
-                {
-                    solutionDir = Path.GetDirectoryName(dte.Solution.FullName);
-                }
-
-                string relativePath = filePath;
-                if (!string.IsNullOrEmpty(solutionDir) && filePath.StartsWith(solutionDir, StringComparison.OrdinalIgnoreCase))
-                {
-                    relativePath = filePath.Substring(solutionDir.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                }
-
-                string message = $"@{relativePath} line {lineNumber}";
-                if (!string.IsNullOrEmpty(selectedText))
-                {
-                    message += $"\n{selectedText}";
-                }
-                message += "\n\n";
-
-                ToolWindowPane window = this.package.FindToolWindow(typeof(ClaudeTerminal), 0, true);
-                if (window?.Frame is IVsWindowFrame windowFrame)
-                {
-                    Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
-
-                    if (window.Content is ClaudeTerminalControl control)
-                    {
-                        control.SendToClaude("\x1b[200~" + message + "\x1b[201~", false);
-                        control.FocusTerminal();
-                    }
-                }
+                IVsStatusbar statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
+                statusBar?.SetText("Copied to clipboard. Paste in terminal with Ctrl+V");
             }
             catch (Exception ex)
             {

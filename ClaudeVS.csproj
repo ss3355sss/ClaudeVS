@@ -48,51 +48,13 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClaudeVSPackage.cs" />
-    <Compile Include="ClaudeTerminal.cs" />
-    <Compile Include="ClaudeTerminalCommand.cs" />
     <Compile Include="SendFileLocationCommand.cs" />
-    <Compile Include="SendCommentLineCommand.cs" />
     <Compile Include="SendDebuggerExceptionCommand.cs" />
-    <Compile Include="AgentActionCommand.cs" />
-    <Compile Include="SpeechCommand.cs" />
-    <Compile Include="ClaudeTerminalControl.xaml.cs">
-      <DependentUpon>ClaudeTerminalControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="CommandInputDialog.xaml.cs">
-      <DependentUpon>CommandInputDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="FontSizeDialog.xaml.cs">
-      <DependentUpon>FontSizeDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="ThemeDialog.xaml.cs">
-      <DependentUpon>ThemeDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="ConPtyTerminal.cs" />
-    <Compile Include="ConPtyTerminalConnection.cs" />
-    <Compile Include="SettingsManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="ClaudeTerminalControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="CommandInputDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="FontSizeDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="ThemeDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="VSCommandTable.vsct">
@@ -108,18 +70,6 @@
     </Content>
     <Content Include="Resources\ClaudeVS_128.png">
       <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Lib\Microsoft.Terminal.Control.Debug.dll" Condition="'$(Configuration)' == 'Debug'">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>Microsoft.Terminal.Control.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
-    </Content>
-    <Content Include="Lib\Microsoft.Terminal.Control.Release.dll" Condition="'$(Configuration)' == 'Release'">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>Microsoft.Terminal.Control.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>Microsoft.Terminal.Control.dll</TargetPath>
     </Content>
   </ItemGroup>
   <ItemGroup>
@@ -138,10 +88,6 @@
     <Reference Include="System.Xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Terminal.Wpf">
-      <HintPath>Lib\Microsoft.Terminal.Wpf.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.755" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime" NoWarn="NU1604" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120" NoWarn="NU1604" />
