@@ -175,15 +175,16 @@ namespace ClaudeVS
 				return null;
 
 			StringBuilder message = new StringBuilder();
-			message.AppendLine("DEBUGGER EXCEPTION/ERROR INFO:");
+			message.AppendLine("Analyze this debugger exception and suggest a fix:");
 			message.AppendLine();
 
 			string exceptionMessage = Instance.GetExceptionMessage(dte);
 
 			if (!string.IsNullOrEmpty(exceptionMessage))
 			{
-				message.AppendLine("=== EXCEPTION ===");
+				message.AppendLine("```");
 				message.AppendLine(exceptionMessage);
+				message.AppendLine("```");
 				message.AppendLine();
 			}
 
@@ -198,18 +199,14 @@ namespace ClaudeVS
 			{
 				if (lastException.Type != null && lastException.Type.Contains("System."))
 				{
-					message.AppendLine("=== MANAGED EXCEPTION DETAILS ===");
-					message.AppendLine($"Type: {lastException.Type}");
+					message.AppendLine($"Managed exception `{lastException.Type}`:");
+					message.AppendLine("```");
 
 					try
 					{
 						var stackTrace = dte.Debugger.GetExpression("$exception.StackTrace", false, 1000);
 						if (stackTrace != null && stackTrace.IsValidValue)
-						{
-							message.AppendLine();
-							message.AppendLine("Stack Trace:");
 							message.AppendLine(stackTrace.Value);
-						}
 					}
 					catch { }
 
@@ -217,12 +214,11 @@ namespace ClaudeVS
 					{
 						var innerEx = dte.Debugger.GetExpression("$exception.InnerException", false, 1000);
 						if (innerEx != null && innerEx.IsValidValue && !innerEx.Value.Contains("null"))
-						{
-							message.AppendLine();
-							message.AppendLine($"Inner Exception: {innerEx.Value}");
-						}
+							message.AppendLine($"InnerException: {innerEx.Value}");
 					}
 					catch { }
+
+					message.AppendLine("```");
 					message.AppendLine();
 				}
 			}
@@ -230,8 +226,7 @@ namespace ClaudeVS
 			if (dte.Debugger.LastBreakReason == dbgEventReason.dbgEventReasonExceptionThrown ||
 				dte.Debugger.LastBreakReason == dbgEventReason.dbgEventReasonExceptionNotHandled)
 			{
-				message.AppendLine("=== BREAK REASON ===");
-				message.AppendLine($"Reason: {dte.Debugger.LastBreakReason}");
+				message.AppendLine($"Break reason: `{dte.Debugger.LastBreakReason}`");
 				message.AppendLine();
 			}
 
@@ -239,7 +234,8 @@ namespace ClaudeVS
 			{
 				try
 				{
-					message.AppendLine("=== CALL STACK ===");
+					message.AppendLine("Call stack:");
+					message.AppendLine("```");
 					int frameCount = 0;
 					foreach (EnvDTE.StackFrame frame in dte.Debugger.CurrentThread.StackFrames)
 					{
@@ -259,6 +255,7 @@ namespace ClaudeVS
 						message.AppendLine(frameInfo);
 						frameCount++;
 					}
+					message.AppendLine("```");
 					message.AppendLine();
 				}
 				catch { }
@@ -266,10 +263,7 @@ namespace ClaudeVS
 
 			if (dte.Debugger.CurrentStackFrame != null)
 			{
-				message.AppendLine();
-				message.AppendLine("=== CURRENT STACK FRAME ===");
-				message.AppendLine($"Function: {dte.Debugger.CurrentStackFrame.FunctionName}");
-				message.AppendLine($"Language: {dte.Debugger.CurrentStackFrame.Language}");
+				message.AppendLine($"Current frame: `{dte.Debugger.CurrentStackFrame.FunctionName}` ({dte.Debugger.CurrentStackFrame.Language})");
 
 				try
 				{
@@ -282,9 +276,7 @@ namespace ClaudeVS
 							{
 								string sourceInfo = local.Value;
 								if (!string.IsNullOrEmpty(sourceInfo) && sourceInfo.Contains(":"))
-								{
 									message.AppendLine($"Source: {sourceInfo}");
-								}
 								break;
 							}
 						}
@@ -293,40 +285,34 @@ namespace ClaudeVS
 				catch { }
 
 				if (dte.Debugger.CurrentStackFrame.Module != null)
-				{
-					message.AppendLine($"Module: {dte.Debugger.CurrentStackFrame.Module}");
-				}
+					message.AppendLine($"Module: `{dte.Debugger.CurrentStackFrame.Module}`");
+
+				message.AppendLine();
 			}
 
 			if (dte.Debugger.BreakpointLastHit != null)
 			{
+				message.AppendLine($"Breakpoint: `{dte.Debugger.BreakpointLastHit.File}:{dte.Debugger.BreakpointLastHit.FileLine}`");
+				if (!string.IsNullOrEmpty(dte.Debugger.BreakpointLastHit.Condition))
+					message.AppendLine($"Condition: `{dte.Debugger.BreakpointLastHit.Condition}`");
 				message.AppendLine();
-				message.AppendLine("=== BREAKPOINT INFO ===");
-				message.AppendLine($"File: {dte.Debugger.BreakpointLastHit.File}");
-				message.AppendLine($"Line: {dte.Debugger.BreakpointLastHit.FileLine}");
-				message.AppendLine($"Condition: {dte.Debugger.BreakpointLastHit.Condition}");
 			}
 
 			if (dte.Debugger.CurrentProcess != null)
 			{
-				message.AppendLine();
-				message.AppendLine("=== PROCESS INFO ===");
-				message.AppendLine($"Name: {dte.Debugger.CurrentProcess.Name}");
-				message.AppendLine($"Process ID: {dte.Debugger.CurrentProcess.ProcessID}");
-
+				message.AppendLine($"Process: `{dte.Debugger.CurrentProcess.Name}` (PID {dte.Debugger.CurrentProcess.ProcessID})");
 				if (dte.Debugger.CurrentThread != null)
-				{
-					message.AppendLine($"Thread ID: {dte.Debugger.CurrentThread.ID}");
-					message.AppendLine($"Thread Name: {dte.Debugger.CurrentThread.Name}");
-				}
+					message.AppendLine($"Thread: {dte.Debugger.CurrentThread.ID} ({dte.Debugger.CurrentThread.Name})");
+				message.AppendLine();
 			}
 
 			string outputWindowText = Instance.GetLastOutputWindowLines(dte, 10);
 			if (!string.IsNullOrEmpty(outputWindowText))
 			{
-				message.AppendLine();
-				message.AppendLine("=== OUTPUT WINDOW (Last 10 lines) ===");
+				message.AppendLine("Output window (last 10 lines):");
+				message.AppendLine("```");
 				message.AppendLine(outputWindowText);
+				message.AppendLine("```");
 			}
 
 			return message.ToString();
@@ -343,13 +329,7 @@ namespace ClaudeVS
 				if (message == null)
 					return;
 
-				System.Windows.Clipboard.SetText(message.Replace("\r\n", "\n"));
-
-				try { dte.ExecuteCommand("View.Terminal"); }
-				catch (Exception ex2) { Debug.WriteLine($"Failed to open VS terminal: {ex2.Message}"); }
-
-				IVsStatusbar statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
-				statusBar?.SetText("Copied to clipboard. Paste in terminal with Ctrl+V");
+				TerminalPasteHelper.SendToTerminal(message);
 			}
 			catch (Exception ex)
 			{

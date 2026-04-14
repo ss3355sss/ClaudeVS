@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-ClaudeVS is a Visual Studio 2022/2026 extension (VSIX) that embeds AI coding CLIs (Claude Code, Copilot, Codex, Gemini) as native terminal windows inside the IDE. It uses Windows ConPTY for terminal emulation and Microsoft.Terminal.Wpf for rendering.
+ClaudeVS is a Visual Studio 2022/2026 extension (VSIX) that embeds AI coding CLIs (Claude Code, Copilot, Codex, Gemini) as native terminal windows inside the IDE. It uses Windows ConPTY for terminal emulation and Microsoft.Terminal.Wpf for rendering. Targets .NET Framework 4.7.2.
 
 ## Build
 
@@ -12,7 +12,7 @@ ClaudeVS is a Visual Studio 2022/2026 extension (VSIX) that embeds AI coding CLI
 cmd /c "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe" ClaudeVS.csproj -t:Build -p:Configuration=Debug -v:minimal
 ```
 
-Or just run `Build.bat`. **Build, don't Rebuild.** There are no automated tests.
+`Build.bat` runs **Release** config. **Build, don't Rebuild.** There are no automated tests.
 
 To test: launch the VS Experimental Instance (F5 from VS with `/rootsuffix Exp`).
 
@@ -28,30 +28,33 @@ To test: launch the VS Experimental Instance (F5 from VS with `/rootsuffix Exp`)
 
 ## Architecture
 
-**Entry point:** `ClaudeVSPackage.cs` — the VS package that registers all commands on async initialization.
+**Entry point:** `ClaudeVSPackage.cs` — the VS package. `InitializeAsync` registers `SendFileLocationCommand` and `SendDebuggerExceptionCommand`. Other commands (`AgentActionCommand`, `SpeechCommand`, `SendCommentLineCommand`, `ClaudeTerminalCommand`) are initialized from `ClaudeTerminalControl` when the tool window loads.
 
 **Terminal stack (bottom-up):**
-1. `ConPtyTerminal.cs` — P/Invoke wrapper around Windows ConPTY API (CreatePseudoConsole, process pipes, resize). Discovers CLI paths and spawns agent processes.
-2. `ConPtyTerminalConnection.cs` — implements `ITerminalConnection` to bridge ConPTY I/O with Microsoft.Terminal.Wpf's `TerminalControl`. Handles output buffering and pause/resume.
-3. `ClaudeTerminalControl.xaml/.cs` — WPF user control with a tab bar; each tab owns one ConPtyTerminal + TerminalConnection pair. Manages theming (Light/Dark/System).
-4. `ClaudeTerminal.cs` — VS tool window pane hosting the WPF control. Implements `IOleCommandTarget` to intercept VS key bindings and forward them to the terminal.
+1. `ConPtyTerminal.cs` — P/Invoke wrapper around Windows ConPTY API (CreatePseudoConsole, process pipes, resize). CLI path discovery: checks `%APPDATA%/npm/<cli>.cmd` first, then `PATH`. Spawns via `cmd.exe /c` for `.cmd`/`.bat` scripts, direct exec for `.exe`.
+2. `ConPtyTerminalConnection.cs` — implements `ITerminalConnection` to bridge ConPTY I/O with Microsoft.Terminal.Wpf's `TerminalControl`. `WriteInput` auto-wraps multi-char non-escape input in bracketed paste (`\x1b[200~...\x1b[201~`). Supports output pause/resume with buffer.
+3. `ClaudeTerminalControl.xaml/.cs` — WPF user control with a tab bar and toolbar. Each tab is an `AgentTab` struct holding its own ConPtyTerminal + Connection + TerminalControl. Manages theming (Light/Dark/System), font size, solution change detection, and multi-agent tabs.
+4. `ClaudeTerminal.cs` — VS tool window pane hosting the WPF control. Implements `IOleCommandTarget` and `IVsWindowFrameNotify3`. `PreProcessMessage` forwards all key messages (except Escape) to the terminal instead of VS.
 
-**Command handlers** (each registered in `ClaudeVSPackage.InitializeAsync`):
-- `ClaudeTerminalCommand` — opens/focuses the tool window
-- `SendFileLocationCommand` — sends active file path + line + selection to agent
-- `SendCommentLineCommand` — sends the current comment line as a task instruction
-- `SendDebuggerExceptionCommand` — captures debugger exceptions via `IDebugEventCallback2`
-- `AgentActionCommand` — forwards hotkeys (Ctrl+B/O/R, Alt+1-4 QuickSwitch) to terminal
-- `SpeechCommand` — Windows Speech Recognition voice input
+**Command handlers:**
+- `SendFileLocationCommand` (0x0102) — copies file path + line + selection to clipboard, opens VS terminal
+- `SendCommentLineCommand` (0x0103) — sends comment line as a task instruction via bracketed paste
+- `SendDebuggerExceptionCommand` (0x0104) — captures exceptions via `IDebugEventCallback2`, copies rich debug context to clipboard
+- `AgentActionCommand` (0x0105-0x0112) — forwards hotkeys to terminal, handles QuickSwitch (tab switching), NewAgent, and clipboard paste with bracketed paste mode
+- `SpeechCommand` (0x010B) — Windows Speech Recognition voice input (unavailable in admin mode)
 
-**Settings:** `SettingsManager.cs` persists user preferences (font size, theme, last command, QuickSwitch presets) via VS `ShellSettingsManager`.
+All commands share `CommandSet` GUID `a7c8e9d0-1234-5678-9abc-def012345678`. Package GUID is `b7d90b76-b34d-46e0-ab4f-888666287245`.
+
+**Settings:** `SettingsManager.cs` persists user preferences (font size, theme, last command, QuickSwitch presets) via VS `ShellSettingsManager` under collection path `"ClaudeVS"`.
 
 **External dependencies:**
-- `Lib/Microsoft.Terminal.Control.{Debug,Release}.dll` — pre-built Microsoft.Terminal.Wpf binaries
-- NuGet: Microsoft.VisualStudio.SDK, Microsoft.Windows.SDK.Contracts
+- `Lib/Microsoft.Terminal.Control.{Debug,Release}.dll` — pre-built Microsoft.Terminal.Wpf binaries (native DLL, P/Invoked for selection/scroll)
+- NuGet: Microsoft.VisualStudio.SDK, Microsoft.Windows.SDK.Contracts (for WinRT Speech API)
 
 ## Key Patterns
 
-- All terminal input uses **bracketed paste mode** (`\x1b[200~...\x1b[201~`) for sending multi-line content.
-- Command definitions live in `VSCommandTable.vsct` (VSCT XML format defining menus, groups, buttons, and GUIDs/IDs).
-- The extension targets .NET Framework 4.7.2.
+- **Bracketed paste mode** (`\x1b[200~...\x1b[201~`): `ConPtyTerminalConnection.WriteInput` applies this automatically for multi-char non-escape input. `AgentActionCommand` applies it explicitly for clipboard paste. `SendCommentLineCommand` wraps manually.
+- **Send commands use clipboard**: `SendFileLocationCommand` and `SendDebuggerExceptionCommand` copy to clipboard and open the VS terminal — they do NOT write directly to the ConPTY terminal.
+- **VSCT is minimal**: `VSCommandTable.vsct` declares only 2 buttons (SendFileLocation, SendDebuggerException) in the View menu. All other commands (AgentActions, Speech, QuickSwitch, NewAgent) are registered purely in code.
+- **Solution awareness**: `ClaudeTerminalControl` listens to `SolutionEvents.Opened`/`AfterClosing`. On solution open, all tabs restart with the new solution directory. On close, all terminals stop.
+- **Tab lifecycle**: Tabs are created via `CreateNewAgentTab` but initialized lazily (`EnsureTabInitialized` → `InitializeConPtyTerminal`) when first activated. Each tab tracks its own `CurrentSolutionPath`.

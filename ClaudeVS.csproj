@@ -50,6 +50,7 @@
     <Compile Include="ClaudeVSPackage.cs" />
     <Compile Include="SendFileLocationCommand.cs" />
     <Compile Include="SendDebuggerExceptionCommand.cs" />
+    <Compile Include="TerminalPasteHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
@@ -62,9 +63,6 @@
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\ClaudeToolWindowCommand.png">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <Content Include="Resources\ClaudeVS_16.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
