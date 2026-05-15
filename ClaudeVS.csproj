@@ -50,7 +50,7 @@
     <Compile Include="ClaudeVSPackage.cs" />
     <Compile Include="SendFileLocationCommand.cs" />
     <Compile Include="SendDebuggerExceptionCommand.cs" />
-    <Compile Include="TerminalPasteHelper.cs" />
+    <Compile Include="McpServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
@@ -84,6 +84,7 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
     <Reference Include="System.Xaml" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.755" />

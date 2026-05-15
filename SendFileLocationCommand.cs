@@ -143,7 +143,13 @@ namespace ClaudeVS
 				if (message == null)
 					return;
 
-				TerminalPasteHelper.SendToTerminal(message);
+				System.Windows.Clipboard.SetText(message.Replace("\r\n", "\n"));
+
+				try { dte.ExecuteCommand("View.Terminal"); }
+				catch { }
+
+				var statusBar = Package.GetGlobalService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsStatusbar)) as Microsoft.VisualStudio.Shell.Interop.IVsStatusbar;
+				statusBar?.SetText("Copied to clipboard. Paste in terminal with Ctrl+V");
 			}
 			catch (Exception ex)
 			{

@@ -26,12 +26,15 @@ namespace ClaudeVS
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(ClaudeVSPackage.PackageGuidString)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideAutoLoad(Microsoft.VisualStudio.Shell.Interop.UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     public sealed class ClaudeVSPackage : AsyncPackage
     {
         /// <summary>
         /// ClaudeVSPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "b7d90b76-b34d-46e0-ab4f-888666287245";
+
+        private McpServer mcpServer;
 
         #region Package Members
 
@@ -50,6 +53,20 @@ namespace ClaudeVS
 
             await SendFileLocationCommand.InitializeAsync(this);
             await SendDebuggerExceptionCommand.InitializeAsync(this);
+
+            mcpServer = new McpServer();
+            if (mcpServer.Start())
+            {
+                var statusBar = GetService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsStatusbar)) as Microsoft.VisualStudio.Shell.Interop.IVsStatusbar;
+                statusBar?.SetText($"ClaudeVS MCP server on port {mcpServer.Port}");
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                mcpServer?.Dispose();
+            base.Dispose(disposing);
         }
 
         #endregion
